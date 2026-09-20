@@ -1,12 +1,13 @@
 /**
- * Clean, lightweight Markdown parser and renderer for conversational clinical messages.
+ * MAANG-Grade Markdown parser and renderer for conversational clinical messages.
  * 
  * Safely parses:
  * - Section headings (### or **Heading**)
- * - Bullet points (- or *)
+ * - Urgent safety banners (### ⚠️ Important Medical Safety Advice or **URGENT ADVICE**)
+ * - Bullet points (- or * or •)
  * - Numbered questions/lists (1. 2.)
- * - Inline bold (**text**) and italic (*text*)
- * - Cleans up escaped markdown (\\*\\* -> **)
+ * - Inline bold (**text**), italic (*text*), and code (`text`)
+ * - Cleans up escaped markdown (\*\* -> **)
  * - Strips accidental HTML tags (<br>, <table>, etc.)
  */
 function parseInlineMarkdown(text) {
@@ -20,8 +21,8 @@ function parseInlineMarkdown(text) {
         .replace(/\\</g, "<")
         .replace(/\\>/g, ">");
 
-    // 2. Split by bold **text**
-    const parts = clean.split(/(\*\*[^*]+?\*\*)/g);
+    // 2. Split by bold **text**, code `text`, and italic *text*
+    const parts = clean.split(/(\*\*[^*]+?\*\*|`[^`]+?`|\*[^*]+?\*)/g);
 
     return parts.map((part, idx) => {
         if (part.startsWith("**") && part.endsWith("**")) {
@@ -29,6 +30,20 @@ function parseInlineMarkdown(text) {
                 <strong key={idx} className="md-strong">
                     {part.slice(2, -2)}
                 </strong>
+            );
+        }
+        if (part.startsWith("`") && part.endsWith("`")) {
+            return (
+                <code key={idx} className="md-inline-code">
+                    {part.slice(1, -1)}
+                </code>
+            );
+        }
+        if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**")) {
+            return (
+                <em key={idx} className="md-italic">
+                    {part.slice(1, -1)}
+                </em>
             );
         }
         return part;
@@ -57,7 +72,8 @@ function MarkdownRenderer({ content }) {
                 <ul key={key} className="md-ul">
                     {currentList.items.map((item, idx) => (
                         <li key={idx} className="md-li">
-                            {parseInlineMarkdown(item)}
+                            <span className="md-bullet-marker" aria-hidden="true">•</span>
+                            <span className="md-li-content">{parseInlineMarkdown(item)}</span>
                         </li>
                     ))}
                 </ul>
@@ -66,8 +82,9 @@ function MarkdownRenderer({ content }) {
             elements.push(
                 <ol key={key} className="md-ol">
                     {currentList.items.map((item, idx) => (
-                        <li key={idx} className="md-li">
-                            {parseInlineMarkdown(item)}
+                        <li key={idx} className="md-oli">
+                            <span className="md-num-badge">{idx + 1}</span>
+                            <span className="md-oli-content">{parseInlineMarkdown(item)}</span>
                         </li>
                     ))}
                 </ol>
@@ -90,7 +107,7 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
-        // Table row e.g. | Key | Value | -> convert to bullet
+        // Table row e.g. | Key | Value | -> convert to neat bullet
         if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
             flushList();
             const cells = trimmed
@@ -116,6 +133,23 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
+        // Urgent alert heading e.g. ### ⚠️ Important Medical Safety Advice or **URGENT ADVICE**
+        if (
+            trimmed.includes("⚠️") ||
+            trimmed.toLowerCase().includes("urgent advice") ||
+            trimmed.toLowerCase().includes("urgent medical safety")
+        ) {
+            flushList();
+            const cleanHeading = trimmed.replace(/^#{1,4}\s*/, "").replace(/\*\*/g, "");
+            elements.push(
+                <div key={`alert-${i}`} className="md-urgent-callout-header">
+                    <span className="md-urgent-icon">⚠️</span>
+                    <span className="md-urgent-title">{cleanHeading}</span>
+                </div>
+            );
+            continue;
+        }
+
         // Heading: ### Heading or ## Heading
         const headingMatch = trimmed.match(/^#{1,4}\s+(.+)$/);
         if (headingMatch) {
@@ -128,7 +162,7 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
-        // Standalone bold heading e.g. **What you've told me**
+        // Standalone bold heading e.g. **Clinical Status & Known Facts:**
         if (/^\*\*[^*]+?\*\*:?$/.test(trimmed)) {
             flushList();
             elements.push(
@@ -139,7 +173,7 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
-        // Bullet list: - item or * item
+        // Bullet list: - item or * item or • item
         const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/);
         if (bulletMatch) {
             if (!currentList || currentList.type !== "ul") {

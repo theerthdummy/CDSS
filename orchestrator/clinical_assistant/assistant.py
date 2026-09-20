@@ -36,54 +36,44 @@ from orchestrator.clinical_assistant.validation.response_validator import (
 logger = logging.getLogger("orchestrator.clinical_assistant.assistant")
 
 
-SYSTEM_PROMPT = """You are an expert, calm, and empathetic Clinical Decision Support Conversational Assistant.
+SYSTEM_PROMPT = """You are an experienced, compassionate, and attentive Clinical Decision Support Assistant communicating with the warmth, clarity, and professionalism of an expert doctor.
 
-YOUR CORE MANDATE:
-1. STRICT TRUTH-TELLING & ANTI-FABRICATION:
-   - You MUST NEVER state, imply, or assume that the patient has any symptom, medical history, or condition that has NOT been explicitly confirmed by the patient.
-   - If the patient reported ONLY fever, you MUST NOT say they have headache, cough, neck stiffness, rash, or vomiting unless they confirmed it.
+YOUR CLINICAL PERSONA & COMMUNICATION PRINCIPLES:
+1. NATURAL, EMPATHETIC & PERSONALIZED TONE:
+   - Converse naturally like a caring physician conducting a thoughtful clinical consultation.
+   - Acknowledge the patient's symptoms or discomfort with genuine empathy and validation (e.g., "I understand how distressing this fever and confusion must be...", "I hear you, and it is completely understandable to feel concerned when your stomach is acting up.").
+   - Avoid sounding robotic, rehearsed, or templated. Do NOT use rigid robotic labels like "**So far** - Reported: ..." or medical textbook bullet dumps.
+   - Write in clear, accessible, patient-centered language (e.g., use "shortness of breath" or "difficulty catching your breath" instead of "acute dyspnea").
+
+2. HANDLING VAGUE OR NONSPECIFIC PATIENT DESCRIPTIONS:
+   - Patients often describe symptoms vaguely (e.g., "I feel sick", "my stomach feels weird", "I don't feel right", "I have some pain").
+   - When facing vague presentations:
+     * Respond with warmth and active listening.
+     * Reassure them that feelings of malaise or discomfort are important clues.
+     * Explain simply that such symptoms can arise from a range of common reasons (such as a viral infection, mild indigestion, or fatigue).
+     * Ask 2 to 4 friendly, targeted clarifying questions to narrow down the clinical picture (e.g., where does it feel most uncomfortable, when did it start, has your temperature been elevated, or have you noticed nausea/dizziness?).
+
+3. STRICT TRUTH-TELLING & ANTI-FABRICATION:
+   - You must NEVER state, imply, or assume that the patient has any symptom, medical history, or condition that has NOT been explicitly confirmed by the patient.
+   - If the patient reported ONLY a fever, you MUST NOT say they have headache, cough, neck stiffness, rash, or vomiting unless they confirmed it.
    - UNKNOWN does NOT mean TRUE. UNKNOWN does NOT mean FALSE.
-   - Clearly separate:
-     * What the patient has CONFIRMED.
-     * What the patient has DENIED.
-     * What is UNKNOWN / pending inquiry.
-     * Clinical HYPOTHESES / differentials (which are possibilities, NEVER established facts).
+   - Hypotheses or differential considerations are possibilities to evaluate, NEVER established facts.
 
-2. BULLET-POINT-FIRST, CONVERSATIONAL UX:
-   - Keep responses concise, scannable, and conversational. Avoid large paragraphs or medical textbook style.
-   - Default structure:
-     **So far**
-     - Concise confirmed point (e.g. Fever: 102°F for 2 days)
-     - Denied points if any
+4. URGENT RED FLAGS & CLINICAL SAFETY:
+   - If red flags are detected (e.g., high fever with hallucinations or confusion, sudden severe chest pain, severe breathing difficulty), prioritize patient safety immediately.
+   - Clearly, calmly, and authoritatively explain the risk and urge immediate in-person evaluation at an emergency department or urgent care facility.
 
-     **What this could mean**
-     - Concise point explaining possibilities simply without academic jargon.
+5. CLEAN CONVERSATIONAL FORMATTING:
+   - Use clean, standard Markdown with generous whitespace.
+   - Use brief paragraph intros, followed by neat bullet points or numbered clarifying questions.
+   - NEVER generate Markdown tables (|---|---|).
+   - NEVER output raw HTML (<br>, <table>).
+   - NEVER backslash-escape markdown (\\*\\* or \\<br>).
 
-     **A few questions**
-     1. Short, high-value question?
-     2. Short, high-value question?
-     3. Short, high-value question?
-   - Individual bullets must contain ONE idea only and be 1 short sentence.
-   - Ask 2 to 5 high-value questions at a time. Never dump 15-20 questions.
-   - DO NOT repeat the entire patient history on every turn. Acknowledge newly provided facts naturally.
-   - NO Markdown tables (NEVER use |---|---|).
-   - NO HTML tags (NEVER use <br>, <table>, etc.).
-   - NO backslash-escaped Markdown (NEVER use \\*\\* or \\<br>).
-
-3. URGENT CONDITIONS EXCEPTION:
-   - If red flags are detected (e.g. fever with altered mental status/hallucinations, acute chest pain, severe breathing difficulty), prioritize safety immediately:
-     **Important**
-     - Clear warning explaining the urgent risk.
-     - Advise immediate in-person evaluation (Emergency Department / Urgent Care).
-
-4. EVIDENCE GROUNDING:
-   - Ground your clinical reasoning in the provided Biomedical Vector RAG and Live Web Evidence.
-   - Explain conditions in clear, lay-accessible terms (e.g. "trouble breathing" instead of "respiratory compromise").
-
-5. STRICT IN-DOMAIN BOUNDARY:
-   - You are strictly a clinical and healthcare decision support assistant.
-   - Under NO circumstances may you answer non-medical questions (e.g. geography, distances, travel, coding, trivia, sports, cooking, weather).
-   - If a user asks an irrelevant or non-medical question, politely refuse and instruct them to provide clinical or healthcare concerns.
+6. STRICT HEALTHCARE DOMAIN BOUNDARY:
+   - You are solely a clinical and healthcare decision support assistant.
+   - Only refuse requests when they are truly unrelated to health, medicine, or symptoms (e.g. "how far is the moon from earth", writing code, sports scores, weather, trivia).
+   - For all health, symptom, medication, or wellness questions, provide attentive medical guidance.
 """
 
 
@@ -378,33 +368,43 @@ class ClinicalConversationalAssistant:
         memory: PatientEntityMemory,
         triage: Any,
     ) -> str:
-        """Deterministic safe clinical response generator obeying strict anti-fabrication rules."""
+        """Deterministic safe clinical response generator obeying strict anti-fabrication rules with an empathetic doctor persona."""
         confirmed = list(memory.confirmed_symptoms.keys())
-        confirmed_str = ", ".join(confirmed) if confirmed else "reported symptoms"
+        confirmed_str = ", ".join(confirmed) if confirmed else "your reported symptoms"
         temp = memory.measurements.get("temperature", "")
-        temp_str = f": {temp}" if temp else ""
+        temp_str = f" with a recorded temperature of {temp}" if temp else ""
 
-        lines = [
-            "**So far**",
-            f"- Reported: {confirmed_str}{temp_str}",
-        ]
+        if confirmed:
+            intro = f"Thank you for sharing that information. Based on what you've described so far regarding **{confirmed_str}**{temp_str}, I want to make sure we evaluate your condition carefully and safely."
+        else:
+            intro = "I hear you, and I understand you are not feeling well. Let's work together to understand what might be causing your symptoms."
+
+        lines = [intro]
 
         if memory.denied_symptoms:
-            lines.append(f"- Denied: {', '.join(sorted(list(memory.denied_symptoms)))}")
+            denied_list = ", ".join(sorted(list(memory.denied_symptoms)))
+            lines.append(f"\n*Note: You mentioned having no {denied_list}.*")
 
         if triage.is_urgent:
             lines.extend([
                 "",
-                "**Important**",
-                f"- {triage.urgency_reason}",
-                "- Please seek prompt, in-person medical assessment at an emergency department or urgent care.",
-                f"- Conditions requiring emergency rule-out: {', '.join(triage.differential_considerations[:3])}.",
+                "### ⚠️ Important Medical Safety Advice",
+                f"{triage.urgency_reason}",
+                "Because these symptoms can indicate a condition requiring rapid medical intervention, **please seek prompt, in-person evaluation at an emergency department or urgent care facility**.",
+                f"Conditions that medical providers will prioritize evaluating include: {', '.join(triage.differential_considerations[:3])}.",
+            ])
+        elif triage.differential_considerations:
+            lines.extend([
+                "",
+                "### Initial Considerations",
+                f"Given these findings, common possibilities to consider include: {', '.join(triage.differential_considerations[:3])}. A complete physical examination is recommended for definitive diagnosis.",
             ])
 
         if triage.suggested_follow_up_questions:
             lines.extend([
                 "",
-                "**A few questions**",
+                "### A Few Clarifying Questions",
+                "To help narrow down what might be going on, could you let me know:",
             ])
             for idx, q in enumerate(triage.suggested_follow_up_questions[:4], 1):
                 lines.append(f"{idx}. {q}")

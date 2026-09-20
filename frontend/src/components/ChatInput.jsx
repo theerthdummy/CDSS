@@ -22,6 +22,9 @@ function ChatInput({ value = "", onChange, onSend, disabled }) {
         if (onChange) {
             onChange("");
         }
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "44px";
+        }
     };
 
     const handleKeyDown = (event) => {

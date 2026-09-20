@@ -232,13 +232,8 @@ class ClinicalResponseValidator:
         # If the critical issue was out of domain, return standard clinical refusal
         has_ood = any(i.category == "OUT_OF_DOMAIN_LEAKAGE" for i in issues)
         if has_ood:
-            return (
-                "**Out of Domain**\n"
-                "- I am a specialized Clinical Decision Support Assistant designed solely for medical and healthcare guidance.\n"
-                "- I cannot answer non-medical questions such as general geography, trivia, math, or coding.\n\n"
-                "**How I can help**\n"
-                "- Please provide patient symptoms, clinical notes, medications, or health concerns, and I will be glad to assist you."
-            )
+            from orchestrator.clinical_assistant.validation.domain_guardrail import DomainGuardrail
+            return DomainGuardrail.get_refusal_response()
 
         confirmed_list = sorted([s.name for s in memory.confirmed_symptoms.values()])
         confirmed_str = ", ".join(confirmed_list) if confirmed_list else "reported symptoms"

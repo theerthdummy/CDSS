@@ -35,7 +35,7 @@ CORE REASONING PRINCIPLES:
 
 2. STRICT EVIDENCE GROUNDING:
    - Every statement MUST be grounded in the supplied Agent 4 Unified Clinical Context.
-   - DO NOT introduce unsupported diseases, treatments, medications, tests, or patient characteristics.
+   - DO NOT introduce unsupported diseases, treatments, medications, tests, or patient characteristics. DO NOT invent patient vitals, demographics, or clinical findings.
    - If required clinical information is absent, explicitly document the evidence gap in 'uncertainty_factors' and 'additional_information_needed'.
 
 3. CONFLICT-AWARE REASONING & INCONCLUSIVE EVIDENCE:

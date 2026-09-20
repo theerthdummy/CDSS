@@ -18,10 +18,12 @@ def test_distance_query_is_rejected():
 
 
 def test_various_out_of_domain_queries_rejected():
-    """Verify that trivia, coding, recipes, and sports queries are rejected."""
+    """Verify that trivia, astronomy, coding, recipes, and sports queries are rejected."""
     ood_queries = [
         "capital of france",
         "how far is tokyo from paris",
+        "how far is the moon from earth",
+        "distance to the moon",
         "write a python script to sort a list",
         "who won the world cup in 2022",
         "what is the recipe for chocolate cake",
@@ -35,7 +37,7 @@ def test_various_out_of_domain_queries_rejected():
 
 
 def test_in_domain_clinical_queries_accepted():
-    """Verify that genuine clinical and symptom queries are accepted."""
+    """Verify that genuine clinical and symptom queries (including vague presentations) are accepted."""
     in_domain_queries = [
         "Patient has a fever of 102 degrees for 2 days",
         "I have severe chest pain radiating to left arm",
@@ -43,6 +45,10 @@ def test_in_domain_clinical_queries_accepted():
         "What are the side effects of ibuprofen?",
         "Patient presents with headache, stiff neck, and photophobia",
         "Blood pressure is 160/100 and feeling dizzy",
+        "I feel sick and uneasy today",
+        "My stomach feels weird and I feel off",
+        "I don't feel good and I have some body aches",
+        "Feeling very tired, weak and groggy since morning",
     ]
     for q in in_domain_queries:
         is_ood, reason = DomainGuardrail.is_out_of_domain(q)

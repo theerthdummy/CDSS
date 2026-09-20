@@ -278,6 +278,10 @@ class GroqReasoningEngine(ReasoningEngine):
                     "schema": ClinicalDecisionSupportResponse.model_json_schema()
                 }
             }
+            headers = {
+                "Authorization": f"Bearer {current_key}",
+                "Content-Type": "application/json"
+            }
             payload = {
                 "model": self.model_name,
                 "messages": [
