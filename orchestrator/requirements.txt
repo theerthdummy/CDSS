@@ -1,0 +1,11 @@
+# FastAPI & Server
+fastapi>=0.120.0
+uvicorn>=0.30.0
+
+# HTTP Client (for agent-to-agent calls)
+httpx>=0.25.0
+requests>=2.28.0
+
+# Utilities
+pydantic>=2.0.0
+python-dotenv>=1.0.0

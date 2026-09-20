@@ -1,0 +1,46 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Acute ST-elevation myocardial infarction (STEMI) with anterior chest pain and diaphoresis",
+      "sources": ["Agent 2 Biomedical RAG", "Agent 3 PubMed"]
+    },
+    {
+      "finding": "Primary Percutaneous Coronary Intervention (PCI) within 90 minutes reduces 30-day mortality",
+      "sources": ["Agent 3 Clinical Guidelines"]
+    }
+  ],
+  "normalized_medical_terms": [
+    "STEMI",
+    "Primary PCI",
+    "Aspirin",
+    "Heparin",
+    "Reperfusion Therapy"
+  ],
+  "supporting_evidence": [
+    {
+      "finding": "Primary PCI within 90 minutes of medical contact is recommended for acute STEMI",
+      "source_attribution": "Agent 3 Clinical Guidelines"
+    },
+    {
+      "finding": "Acute anterior ST elevation correlates with left anterior descending artery occlusion",
+      "source_attribution": "Agent 2 Knowledge Graph"
+    }
+  ],
+  "conflicting_evidence": [],
+  "evidence_priority": [
+    {
+      "finding": "Acute STEMI emergency primary PCI protocol",
+      "priority_score": 0.95,
+      "primary_source": "Agent 3 Clinical Guidelines"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "Acute STEMI emergency primary PCI protocol",
+      "sources": ["PubMed", "Clinical Guidelines"],
+      "upstream_agents": ["Agent 2", "Agent 3"]
+    }
+  ],
+  "fusion_summary": "Patient presentation and fused clinical findings strongly support acute STEMI requiring emergency primary PCI.",
+  "confidence_score": 0.92
+}

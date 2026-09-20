@@ -1,0 +1,21 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Patient reports vague chest pressure with non-diagnostic ECG changes",
+      "sources": ["Agent 2 Biomedical RAG Mock"]
+    }
+  ],
+  "normalized_medical_terms": ["Chest Pressure", "ECG"],
+  "supporting_evidence": [],
+  "conflicting_evidence": [],
+  "evidence_priority": [],
+  "source_traceability": [
+    {
+      "finding": "Patient reports vague chest pressure",
+      "sources": ["Agent 2"],
+      "upstream_agents": ["Agent 2"]
+    }
+  ],
+  "fusion_summary": "Initial clinical presentation with low confidence and missing lab biomarker data.",
+  "confidence_score": 0.45
+}

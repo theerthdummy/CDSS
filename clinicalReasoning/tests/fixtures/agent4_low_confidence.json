@@ -1,0 +1,42 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Atypical chest pain with non-specific ECG ST-T wave changes",
+      "sources": ["Agent 2 Biomedical RAG"]
+    }
+  ],
+  "normalized_medical_terms": [
+    "Chest Pain",
+    "ECG",
+    "Troponin I"
+  ],
+  "supporting_evidence": [
+    {
+      "finding": "Initial troponin I within normal reference limits",
+      "source_attribution": "Agent 2 EHR Labs"
+    }
+  ],
+  "conflicting_evidence": [
+    {
+      "type": "Diagnostic Conflict",
+      "finding": "Acute Coronary Syndrome vs Musculoskeletal Pain",
+      "description": "Equivocal ECG changes with normal initial cardiac biomarkers create clinical ambiguity."
+    }
+  ],
+  "evidence_priority": [
+    {
+      "finding": "Atypical chest pain evaluation",
+      "priority_score": 0.50,
+      "primary_source": "Agent 2 Biomedical RAG"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "Atypical chest pain",
+      "sources": ["EHR"],
+      "upstream_agents": ["Agent 2"]
+    }
+  ],
+  "fusion_summary": "Equivocal presentation of chest pain with conflicting diagnostic indicators requiring additional evidence retrieval.",
+  "confidence_score": 0.45
+}

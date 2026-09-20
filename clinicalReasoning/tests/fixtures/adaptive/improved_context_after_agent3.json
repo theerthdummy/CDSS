@@ -1,0 +1,45 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Patient reports vague chest pressure with non-diagnostic ECG changes",
+      "sources": ["Agent 2 Biomedical RAG Mock"]
+    },
+    {
+      "finding": "ACC/AHA Guidelines: Emergency primary PCI recommended within 90 minutes of first medical contact for STEMI",
+      "sources": ["Agent 3 PubMed Search Mock"]
+    },
+    {
+      "finding": "Dual antiplatelet therapy indicated immediately upon STEMI diagnosis",
+      "sources": ["Agent 3 PubMed Search Mock"]
+    }
+  ],
+  "normalized_medical_terms": ["Chest Pressure", "ECG", "Primary PCI", "Dual Antiplatelet Therapy", "STEMI"],
+  "supporting_evidence": [
+    {
+      "finding": "Emergency primary PCI recommended within 90 minutes for STEMI",
+      "source_attribution": "Agent 3 Clinical Practice Guidelines"
+    }
+  ],
+  "conflicting_evidence": [],
+  "evidence_priority": [
+    {
+      "finding": "Primary PCI reperfusion within 90 minutes",
+      "priority_score": 0.96,
+      "primary_source": "Agent 3 PubMed Search Mock"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "Patient reports vague chest pressure",
+      "sources": ["Agent 2"],
+      "upstream_agents": ["Agent 2"]
+    },
+    {
+      "finding": "Primary PCI reperfusion within 90 minutes",
+      "sources": ["Agent 3 PubMed Search Mock"],
+      "upstream_agents": ["Agent 3"]
+    }
+  ],
+  "fusion_summary": "Re-fused clinical context with definitive Agent 3 guideline evidence.",
+  "confidence_score": 0.88
+}

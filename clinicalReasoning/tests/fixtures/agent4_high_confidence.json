@@ -1,0 +1,51 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Acute ST-elevation myocardial infarction (STEMI) requires immediate emergency reperfusion therapy",
+      "sources": ["Agent 2 Biomedical RAG", "Agent 3 PubMed"]
+    },
+    {
+      "finding": "Primary Percutaneous Coronary Intervention (PCI) within 90 minutes reduces acute mortality",
+      "sources": ["Agent 3 Clinical Guidelines"]
+    }
+  ],
+  "normalized_medical_terms": [
+    "STEMI",
+    "Primary PCI",
+    "Aspirin",
+    "Heparin",
+    "Reperfusion Therapy"
+  ],
+  "supporting_evidence": [
+    {
+      "finding": "Early reperfusion within 90 minutes of medical contact improves 30-day survival",
+      "source_attribution": "Agent 3 Clinical Guidelines"
+    },
+    {
+      "finding": "Biomedical knowledge graph links STEMI to acute coronary occlusion requiring mechanical revascularization",
+      "source_attribution": "Agent 2 Knowledge Graph"
+    }
+  ],
+  "conflicting_evidence": [],
+  "evidence_priority": [
+    {
+      "finding": "STEMI emergency reperfusion therapy",
+      "priority_score": 0.95,
+      "primary_source": "Agent 3 Clinical Guidelines"
+    },
+    {
+      "finding": "Primary PCI within 90 minutes",
+      "priority_score": 0.90,
+      "primary_source": "Agent 3 PubMed"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "STEMI emergency reperfusion therapy",
+      "sources": ["PubMed", "Clinical Guidelines"],
+      "upstream_agents": ["Agent 2", "Agent 3"]
+    }
+  ],
+  "fusion_summary": "Patient presentation and fused clinical evidence strongly support acute STEMI requiring emergency primary PCI reperfusion protocol.",
+  "confidence_score": 0.92
+}

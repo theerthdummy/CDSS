@@ -1,0 +1,45 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Patient reports vague chest pressure with non-diagnostic ECG changes",
+      "sources": ["Agent 2 Biomedical RAG Mock"]
+    },
+    {
+      "finding": "Coronary angiography findings confirm culprit 95% stenosis in LAD coronary artery",
+      "sources": ["Agent 2 Biomedical RAG Mock"]
+    },
+    {
+      "finding": "Troponin I elevation (>4.5 ng/mL) confirms acute myocardial injury",
+      "sources": ["Agent 2 Lab Knowledge Base"]
+    }
+  ],
+  "normalized_medical_terms": ["Chest Pressure", "ECG", "Coronary Angiography", "Troponin I", "LAD Stenosis"],
+  "supporting_evidence": [
+    {
+      "finding": "Troponin I elevation confirms acute myocardial injury",
+      "source_attribution": "Agent 2 Lab Knowledge Base"
+    }
+  ],
+  "conflicting_evidence": [],
+  "evidence_priority": [
+    {
+      "finding": "Coronary angiography 95% LAD stenosis",
+      "priority_score": 0.95,
+      "primary_source": "Agent 2 Biomedical RAG Mock"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "Patient reports vague chest pressure",
+      "sources": ["Agent 2"],
+      "upstream_agents": ["Agent 2"]
+    },
+    {
+      "finding": "Coronary angiography 95% LAD stenosis",
+      "sources": ["Agent 2 Biomedical RAG Mock"],
+      "upstream_agents": ["Agent 2"]
+    }
+  ],
+  "fusion_summary": "Re-fused clinical presentation with definitive Agent 2 biomedical evidence.",
+  "confidence_score": 0.85
+}

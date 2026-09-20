@@ -1,0 +1,23 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Vague chest discomfort without diagnostic ECG or biomarker data",
+      "sources": ["Agent 2 Biomedical RAG"]
+    }
+  ],
+  "normalized_medical_terms": [
+    "Chest Discomfort"
+  ],
+  "supporting_evidence": [],
+  "conflicting_evidence": [],
+  "evidence_priority": [],
+  "source_traceability": [
+    {
+      "finding": "Chest discomfort",
+      "sources": ["EHR"],
+      "upstream_agents": ["Agent 2"]
+    }
+  ],
+  "fusion_summary": "Incomplete presentation lacking diagnostic cardiac biomarkers and ECG findings.",
+  "confidence_score": 0.45
+}

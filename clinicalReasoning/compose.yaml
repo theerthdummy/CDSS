@@ -1,0 +1,37 @@
+# =============================================================================
+# Agent 5 Clinical Reasoning Service - Docker Compose Setup
+# =============================================================================
+
+services:
+  agent5-reasoning:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent5_clinical_reasoning
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_TIMEOUT_SECONDS=${GEMINI_TIMEOUT_SECONDS:-10.0}
+      - PRIMARY_REASONING_PROVIDER=${PRIMARY_REASONING_PROVIDER:-groq}
+      - PRIMARY_REASONING_MODEL=${PRIMARY_REASONING_MODEL:-mistral:latest}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL=${GROQ_MODEL:-gpt-oss-120b}
+      - GROQ_TIMEOUT_SECONDS=${GROQ_TIMEOUT_SECONDS:-15.0}
+      - FALLBACK_REASONING_PROVIDER=${FALLBACK_REASONING_PROVIDER:-ollama}
+      - FALLBACK_REASONING_MODEL=${FALLBACK_REASONING_MODEL:-mistral:latest}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.70}
+      - MAX_ADAPTIVE_RETRIES=${MAX_ADAPTIVE_RETRIES:-3}
+      - UPSTREAM_TIMEOUT_SECONDS=${UPSTREAM_TIMEOUT_SECONDS:-30.0}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped

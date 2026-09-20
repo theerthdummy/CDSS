@@ -1,0 +1,18 @@
+# Core
+qdrant-client>=1.7.0
+sentence-transformers>=2.2.0
+torch>=2.0.0
+transformers>=4.30.0
+
+# Data Ingestion
+biopython>=1.80
+requests>=2.28.0
+datasets>=2.14.0
+
+# Text Processing
+nltk>=3.8.0
+
+# Utilities
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+docker>=7.0.0

@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Legacy local Qdrant data (now using Docker)
+qdrant_data/

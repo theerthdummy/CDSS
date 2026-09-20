@@ -1,0 +1,46 @@
+{
+  "merged_findings": [
+    {
+      "finding": "Atypical chest pain with dynamic ECG T-wave inversions and serial troponin I elevation",
+      "sources": ["Agent 2 Biomedical RAG", "Agent 3 PubMed"]
+    },
+    {
+      "finding": "Non-ST-elevation acute coronary syndrome (NSTE-ACS) diagnosed",
+      "sources": ["Agent 3 Clinical Guidelines"]
+    }
+  ],
+  "normalized_medical_terms": [
+    "NSTE-ACS",
+    "Troponin I",
+    "ECG",
+    "Heparin",
+    "Aspirin"
+  ],
+  "supporting_evidence": [
+    {
+      "finding": "Serial 3-hour cardiac troponin I shows 4-fold rise above 99th percentile URL",
+      "source_attribution": "Agent 2 EHR Labs"
+    },
+    {
+      "finding": "Clinical guidelines recommend dual antiplatelet therapy and early invasive strategy for NSTE-ACS",
+      "source_attribution": "Agent 3 Clinical Guidelines"
+    }
+  ],
+  "conflicting_evidence": [],
+  "evidence_priority": [
+    {
+      "finding": "NSTE-ACS management protocol",
+      "priority_score": 0.88,
+      "primary_source": "Agent 3 Clinical Guidelines"
+    }
+  ],
+  "source_traceability": [
+    {
+      "finding": "NSTE-ACS management protocol",
+      "sources": ["PubMed", "Guidelines"],
+      "upstream_agents": ["Agent 2", "Agent 3"]
+    }
+  ],
+  "fusion_summary": "Re-fused clinical evidence resolves prior diagnostic ambiguity, confirming NSTE-ACS requiring targeted cardiac care.",
+  "confidence_score": 0.78
+}
