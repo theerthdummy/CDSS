@@ -4,12 +4,17 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Install system utilities and supervisor
+# Install system utilities, supervisor, and OCR dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     supervisor \
     build-essential \
-    && rm -rf /var/lib/apt-get/lists/*
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    poppler-utils \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -33,10 +38,18 @@ RUN pip install --no-cache-dir --upgrade pip && \
     tenacity \
     beautifulsoup4 \
     python-dotenv \
-    requests
+    requests \
+    python-multipart \
+    pytesseract \
+    pdf2image \
+    pypdf \
+    Pillow \
+    python-docx \
+    lxml
 
 # Expose default Hugging Face Spaces port
 EXPOSE 7860
 
 # Start all internal microservices and orchestrator via supervisord
 CMD ["supervisord", "-c", "/app/supervisord.conf"]
+
