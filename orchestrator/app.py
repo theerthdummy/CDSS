@@ -3,6 +3,7 @@
 Exposes:
 - POST /chat: Stateful multi-turn clinical conversational assistant powered by hosted OpenAI GPT.
 - POST /analyze: Executes the multi-agent clinical reasoning pipeline with response validation.
+- POST /upload: Upload a medical document (PDF/image/DOCX) for direct OCR-based diagnosis & prognosis.
 - GET /health: Health check auditing downstream agents and OpenAI GPT availability.
 """
 
@@ -21,7 +22,7 @@ for _p in [str(_ORCHESTRATOR_DIR), str(_PROJECT_DIR)]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import httpx
@@ -30,6 +31,13 @@ import config
 import adapters
 from clinical_assistant.assistant import ClinicalConversationalAssistant
 from clinical_assistant.llm_client import OpenAIGPTClient, LLMProvider
+from clinical_assistant.document_ocr import (
+    extract_text_from_file,
+    parse_prescription,
+    build_clinical_context_from_document,
+    TextExtractionError,
+    SUPPORTED_EXTENSIONS,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
@@ -262,6 +270,97 @@ async def analyze(request: AnalyzeRequest):
             success=True,
             session_id=chat_result["session_id"] if "chat_result" in locals() else None,
         )
+
+
+# ── Document Upload → OCR → Clinical Diagnosis ─────────────────────────────
+
+import os, shutil, tempfile, uuid as _uuid
+
+@app.post("/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    session_id: Optional[str] = Form(None),
+    user_message: Optional[str] = Form(None),
+):
+    """
+    Accept a medical document (PDF, JPEG, PNG, DOCX, TXT) and:
+    1. Save to a temp file.
+    2. Run OCR / text extraction (adapted from PilotMaster DocPilot pipeline).
+    3. Parse prescription fields (medications, diagnosis, vitals, etc.).
+    4. Build a structured clinical context prompt.
+    5. Route through the conversational assistant for diagnosis & prognosis.
+    6. Return the same shape as /chat.
+    """
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    allowed = SUPPORTED_EXTENSIONS  # from document_ocr module
+    if ext not in allowed:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type '{ext}'. Supported: {', '.join(allowed)}",
+        )
+
+    tmp_dir = tempfile.mkdtemp()
+    tmp_path = os.path.join(tmp_dir, f"{_uuid.uuid4()}{ext}")
+
+    try:
+        # Save upload to temp file
+        with open(tmp_path, "wb") as fh:
+            shutil.copyfileobj(file.file, fh)
+
+        logger.info("[UPLOAD] Saved '%s' (%d bytes) to %s", file.filename, os.path.getsize(tmp_path), tmp_path)
+
+        # OCR / text extraction
+        try:
+            raw_text = extract_text_from_file(tmp_path, mime_type=file.content_type)
+        except TextExtractionError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+
+        # Parse structured prescription fields
+        parsed = parse_prescription(raw_text)
+        clinical_context = build_clinical_context_from_document(parsed)
+
+        # Build the message the assistant will process.
+        # Combine OCR context with any optional user instruction (e.g. "give prognosis")
+        follow_on = (user_message or "").strip()
+        if follow_on:
+            assistant_prompt = (
+                f"{clinical_context}\n\n"
+                f"[CLINICIAN INSTRUCTION]\n{follow_on}"
+            )
+        else:
+            assistant_prompt = (
+                f"{clinical_context}\n\n"
+                "[CLINICIAN INSTRUCTION]\n"
+                "Based on the prescription / medical document above, provide:\n"
+                "1. Clinical Impression & Diagnosis\n"
+                "2. Prognosis\n"
+                "3. Recommended further investigations or management"
+            )
+
+        # Route through the existing conversational assistant pipeline
+        chat_result = await assistant.chat(
+            message=assistant_prompt,
+            session_id=session_id,
+        )
+
+        return {
+            **chat_result,
+            "document_info": {
+                "filename": file.filename,
+                "file_type": ext,
+                "extracted_chars": len(raw_text),
+                "parsed_fields": {
+                    k: v for k, v in parsed.items() if k != "raw_text" and v
+                },
+            },
+        }
+
+    finally:
+        # Clean up temp files securely
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 # ── Health Check (Non-blocking Async) ──────────────────────────────────────

@@ -141,3 +141,30 @@ export async function getSystemHealth() {
         throw normalizeApiError(error);
     }
 }
+
+/**
+ * Upload a medical document (PDF / image / DOCX) for OCR-based diagnosis and prognosis.
+ * The backend will extract text, parse clinical fields, and run the full clinical assistant pipeline.
+ *
+ * @param {File} file - The file object from an <input type="file"> or drag-and-drop.
+ * @param {string|null} sessionId - Optional session UUID to maintain conversation context.
+ * @param {string|null} userMessage - Optional clinician instruction (e.g. "give prognosis for this prescription").
+ * @returns {Promise<ChatResponse & { document_info: object }>}
+ */
+export async function uploadDocument(file, sessionId = null, userMessage = null) {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        if (sessionId) formData.append("session_id", sessionId);
+        if (userMessage) formData.append("user_message", userMessage);
+
+        const response = await apiClient.post("/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+            timeout: 90000, // OCR on large PDFs can take time
+        });
+        return response.data;
+    } catch (error) {
+        throw normalizeApiError(error);
+    }
+}
+

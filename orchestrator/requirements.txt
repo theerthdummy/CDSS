@@ -1,6 +1,7 @@
 # FastAPI & Server
 fastapi>=0.120.0
 uvicorn>=0.30.0
+python-multipart>=0.0.9
 
 # HTTP Client (for agent-to-agent calls)
 httpx>=0.25.0
@@ -9,3 +10,10 @@ requests>=2.28.0
 # Utilities
 pydantic>=2.0.0
 python-dotenv>=1.0.0
+
+# Document OCR & Text Extraction (adapted from PilotMaster)
+pytesseract>=0.3.10
+pdf2image>=1.17.0
+pypdf>=4.0.0
+Pillow>=10.0.0
+python-docx>=1.1.0

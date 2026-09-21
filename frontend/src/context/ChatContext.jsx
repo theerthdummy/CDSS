@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useCallback, useEffect, useState, useRef } from "react";
-import { chatWithAssistant, analyzeClinicalPipeline, getSystemHealth } from "../api/client";
+import { chatWithAssistant, analyzeClinicalPipeline, getSystemHealth, uploadDocument } from "../api/client";
 import { EMPTY_PATIENT_STATE } from "../api/types";
 
 const ChatContext = createContext(null);
@@ -387,6 +387,108 @@ export function ChatProvider({ children }) {
         }
     }, [consultationMode, activeSessionId, messages, sessionId, patientState, clinicalAssessment, evidence, validation, followUpQuestions, llmMetadata]);
 
+    /**
+     * Upload a medical document and route through clinical assistant for direct diagnosis.
+     */
+    const uploadAndAnalyze = useCallback(async (file, userMessage = null) => {
+        if (!file) return;
+
+        const currentActiveId = activeSessionId || `session-${Date.now()}`;
+        if (!activeSessionId) setActiveSessionId(currentActiveId);
+
+        const fileName = file.name;
+        const label = userMessage
+            ? `📎 ${fileName} — ${userMessage}`
+            : `📎 ${fileName}`;
+
+        const userMsg = createMessage("user", label, { kind: "user" });
+        const updatedWithUser = [...messages, userMsg];
+        setMessages(updatedWithUser);
+        setError(null);
+        setIsLoading(true);
+        setLoadingStage("Extracting text from document & running clinical analysis...");
+
+        const sessionTitle = `Document: ${fileName}`;
+
+        setRecentSessions((prev) => {
+            const existingIdx = prev.findIndex((s) => s.id === currentActiveId);
+            const updatedSession = {
+                id: currentActiveId,
+                backendSessionId: sessionId,
+                title: prev[existingIdx]?.title || sessionTitle,
+                timestamp: new Date().toISOString(),
+                messages: updatedWithUser,
+                patientState, clinicalAssessment, evidence, validation, followUpQuestions, llmMetadata,
+            };
+            if (existingIdx >= 0) {
+                const copy = [...prev];
+                copy[existingIdx] = updatedSession;
+                return copy;
+            }
+            return [updatedSession, ...prev.slice(0, 29)];
+        });
+
+        try {
+            const result = await uploadDocument(file, sessionId, userMessage);
+
+            const newBackendId = result.session_id || sessionId;
+            if (result.session_id) setSessionId(result.session_id);
+            if (result.patient_state) setPatientState(result.patient_state);
+            if (result.clinical_assessment) setClinicalAssessment(result.clinical_assessment);
+            if (Array.isArray(result.evidence)) setEvidence(result.evidence);
+            if (result.validation) setValidation(result.validation);
+            if (Array.isArray(result.follow_up_questions)) setFollowUpQuestions(result.follow_up_questions);
+            if (result.llm_metadata) setLlmMetadata(result.llm_metadata);
+
+            const docInfo = result.document_info || {};
+            const docSummaryLines = [];
+            if (docInfo.parsed_fields?.diagnosis) docSummaryLines.push(`**Stated Diagnosis**: ${docInfo.parsed_fields.diagnosis}`);
+            if (docInfo.parsed_fields?.medications?.length) docSummaryLines.push(`**Medications**: ${docInfo.parsed_fields.medications.join(", ")}`);
+            const docSummary = docSummaryLines.length
+                ? `> 📄 **${fileName}** parsed — ${docInfo.extracted_chars?.toLocaleString()} chars extracted.\n> ${docSummaryLines.join(" · ")}\n\n`
+                : `> 📄 **${fileName}** — ${docInfo.extracted_chars?.toLocaleString()} chars extracted.\n\n`;
+
+            const assistantMsg = createMessage("assistant", docSummary + result.response, {
+                isUrgent: result.urgent_flag || result.clinical_assessment?.is_urgent,
+                validation: result.validation,
+                evidence: result.evidence,
+            });
+
+            const allMessages = [...updatedWithUser, assistantMsg];
+            setMessages(allMessages);
+
+            setRecentSessions((prev) => {
+                const existingIdx = prev.findIndex((s) => s.id === currentActiveId);
+                const updatedSession = {
+                    id: currentActiveId,
+                    backendSessionId: newBackendId,
+                    title: prev[existingIdx]?.title || sessionTitle,
+                    messages: allMessages,
+                    patientState: result.patient_state || patientState,
+                    clinicalAssessment: result.clinical_assessment || clinicalAssessment,
+                    evidence: result.evidence || evidence,
+                    validation: result.validation || validation,
+                    followUpQuestions: result.follow_up_questions || followUpQuestions,
+                    llmMetadata: result.llm_metadata || llmMetadata,
+                    timestamp: new Date().toISOString(),
+                };
+                if (existingIdx < 0) return [updatedSession, ...prev.slice(0, 29)];
+                const copy = [...prev];
+                copy[existingIdx] = updatedSession;
+                return copy;
+            });
+        } catch (err) {
+            console.error("Document upload failed:", err);
+            setError(err);
+            const errMsg = createMessage("assistant", err.message || "Failed to process uploaded document.", { kind: "error" });
+            const allMessages = [...updatedWithUser, errMsg];
+            setMessages(allMessages);
+        } finally {
+            setIsLoading(false);
+            setLoadingStage("");
+        }
+    }, [activeSessionId, messages, sessionId, patientState, clinicalAssessment, evidence, validation, followUpQuestions, llmMetadata]);
+
     return (
         <ChatContext.Provider
             value={{
@@ -414,6 +516,7 @@ export function ChatProvider({ children }) {
                 error,
                 systemHealth,
                 sendMessage,
+                uploadAndAnalyze,
                 resetConsultation,
                 refreshSystemHealth,
             }}

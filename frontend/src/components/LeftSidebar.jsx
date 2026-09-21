@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useChatState } from "../context/ChatContext";
 
 function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
@@ -15,7 +15,16 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
         setIsSidebarOpen,
         isTelemetryOpen,
         setIsTelemetryOpen,
+        uploadAndAnalyze,
     } = useChatState();
+
+    const sidebarFileInputRef = useRef(null);
+
+    const handleSidebarFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) uploadAndAnalyze(file, null);
+        e.target.value = "";
+    };
 
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -88,7 +97,22 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
             </div>
 
             {/* Upload Source / Case File Card */}
-            <div className="sidebar-upload-card" onClick={() => onShowToast && onShowToast("Clinical document ingestion ready", "info")}>
+            <input
+                ref={sidebarFileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.txt,.md"
+                style={{ position: "absolute", opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+                onChange={handleSidebarFileChange}
+                aria-label="Upload medical document"
+            />
+            <div
+                className="sidebar-upload-card"
+                onClick={() => sidebarFileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && sidebarFileInputRef.current?.click()}
+                title="Upload a prescription, report, or scan for OCR-based diagnosis"
+            >
                 <div className="upload-icon-box">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />

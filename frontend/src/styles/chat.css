@@ -1813,3 +1813,178 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ── Document Upload UI ──────────────────────────────────────────────────── */
+
+/* Paperclip / attachment button */
+.btn-upload-attachment {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    background: rgba(20, 184, 166, 0.06);
+    border: 1px solid rgba(20, 184, 166, 0.35);
+    color: rgba(20, 184, 166, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-right: 4px;
+}
+
+.btn-upload-attachment:hover:not(:disabled) {
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    border-color: var(--color-primary);
+}
+
+.btn-upload-attachment.has-file {
+    background: rgba(20, 184, 166, 0.12);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-upload-attachment:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Pulsing teal dot — draws attention to upload feature */
+.upload-btn-pulse {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.6); }
+}
+
+/* Staged file badge — shown above the input card */
+.staged-file-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 6px 10px;
+    background: rgba(20, 184, 166, 0.08);
+    border: 1px solid rgba(20, 184, 166, 0.25);
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.staged-file-icon {
+    font-size: 0.9rem;
+}
+
+.staged-file-name {
+    font-weight: 600;
+    color: var(--color-primary);
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.staged-file-size {
+    color: var(--color-text-subtle);
+    font-size: 0.68rem;
+}
+
+.staged-file-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--color-text-subtle);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color var(--transition-fast);
+}
+
+.staged-file-remove:hover {
+    color: var(--color-danger, #ef4444);
+}
+
+/* Input card border changes when file staged */
+.chatgpt-input-card.has-file {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top-color: rgba(20, 184, 166, 0.3);
+}
+
+/* Drag-active glow on the input card */
+.chatgpt-input-card.drag-active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.2);
+}
+
+/* Full-area drag overlay */
+.drop-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 20, 30, 0.82);
+    border-radius: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 50;
+    pointer-events: none;
+    animation: fadeIn 0.15s ease;
+    border: 2px dashed var(--color-primary);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.drop-overlay-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.drop-overlay-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    letter-spacing: 0.03em;
+}
+
+/* Upload pill in the pills bar */
+.pill-upload {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-subtle);
+}
+
+.pill-upload:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-text-primary);
+}
+
+.pill-upload-active {
+    background: rgba(20, 184, 166, 0.1) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
