@@ -108,32 +108,22 @@ function ChatWindow({ onSelectPrompt, onShowToast }) {
                             </div>
                         )}
 
-                        {/* Suggested Follow-up Quick Clarifications */}
+                        {/* Suggested Follow-up Dynamic Clinical Clarifications */}
                         {!isLoading && followUpQuestions && followUpQuestions.length > 0 && (
                             <div className="followup-chips-section">
                                 <span className="chips-title">High-Yield Clinical Discriminators:</span>
                                 <div className="chips-list">
-                                    <button
-                                        type="button"
-                                        className="chip-btn"
-                                        onClick={() => sendMessage("No cough, sore throat, or respiratory symptoms.")}
-                                    >
-                                        No respiratory signs
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="chip-btn"
-                                        onClick={() => sendMessage("Negative for meningismus, neck stiffness, or severe headache.")}
-                                    >
-                                        No nuchal rigidity / headache
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="chip-btn"
-                                        onClick={() => sendMessage("No dysuria, hematuria, or flank tenderness.")}
-                                    >
-                                        No urinary / flank signs
-                                    </button>
+                                    {followUpQuestions.map((q, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            className="chip-btn"
+                                            onClick={() => sendMessage(q)}
+                                            title={`Consult on: "${q}"`}
+                                        >
+                                            {q}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         )}

@@ -119,8 +119,23 @@ class ProgressiveReasoningController:
         # Dynamically Select Targeted Follow-Up Questions (NEVER REPEATING)
         candidate_questions: List[Tuple[str, str]] = []
 
-        # If fever + hallucinations, select key neurological & infectious exclusion questions
-        if "fever" in confirmed and "hallucinations" in confirmed:
+        confirmed_str = " ".join(confirmed)
+
+        # 1. Musculoskeletal / Sports / Foot & Ankle / Extremity Trauma
+        is_msk = any(k in confirmed_str for k in ["foot", "ankle", "tendon", "muscle", "joint", "fracture", "pain", "swelling", "knee", "shoulder", "trauma", "sprain"])
+        if is_msk:
+            msk_checks = [
+                ("weight_bearing", "Can the patient currently bear weight for 4 steps (Ottawa Ankle/Foot criteria)?"),
+                ("trauma_mechanism", "Was there an acute inversion/twisting trauma, or is this gradual repetitive loading?"),
+                ("palpation_tenderness", "Is tenderness localized to the base of the 5th metatarsal, peroneal groove, or lateral malleolus?"),
+                ("neurovascular", "Are there any distal paresthesias, numbness in the sural/peroneal distribution, or pulse deficits?"),
+            ]
+            for sym, q in msk_checks:
+                if sym not in confirmed and sym not in denied and q not in asked:
+                    candidate_questions.append((sym, q))
+
+        # 2. Acute Fever & Neurological / CNS exclusion
+        elif "fever" in confirmed and "hallucinations" in confirmed:
             checks = [
                 ("headache", cls.DOMAIN_QUESTIONS["headache"]),
                 ("neck stiffness", cls.DOMAIN_QUESTIONS["neck stiffness"]),
@@ -133,11 +148,33 @@ class ProgressiveReasoningController:
                 if sym not in confirmed and sym not in denied and q not in asked:
                     candidate_questions.append((sym, q))
 
+        # 3. Chest Pain / Cardiovascular evaluation
+        elif "chest pain" in confirmed:
+            cardio_checks = [
+                ("exertion_radiation", "Does the pain worsen with exertion or radiate to the left arm, neck, or jaw?"),
+                ("palpation_pleurisy", "Is the pain sharp and pleuritic, or reproduced by chest wall palpation?"),
+                ("dyspnea_diaphoresis", "Any associated diaphoresis, shortness of breath, or lightheadedness?"),
+            ]
+            for sym, q in cardio_checks:
+                if sym not in confirmed and sym not in denied and q not in asked:
+                    candidate_questions.append((sym, q))
+
+        # 4. General Fever / Infectious evaluation
+        elif "fever" in confirmed:
+            fever_checks = [
+                ("respiratory", "Any cough, dyspnea, sore throat, or respiratory congestion?"),
+                ("urinary", "Any dysuria, frequency, flank pain, or costovertebral tenderness?"),
+                ("meningismus", "Any stiff neck, photophobia, or new altered mental state?"),
+            ]
+            for sym, q in fever_checks:
+                if sym not in confirmed and sym not in denied and q not in asked:
+                    candidate_questions.append((sym, q))
+
         # Check demographics / background if missing
         if not memory.age and "What is your age?" not in asked:
-            candidate_questions.insert(0, ("age", "Could you share your age?"))
+            candidate_questions.insert(0, ("age", "Could you share the patient's age?"))
         if memory.medical_history_status == "UNKNOWN" and "Do you have any medical history?" not in asked:
-            candidate_questions.insert(0, ("medical_history", "Do you have any pre-existing medical conditions or take any daily medications?"))
+            candidate_questions.insert(0, ("medical_history", "Any relevant PMHx (e.g. previous fractures, gout, diabetes, neuropathy) or medications?"))
 
         # Select top 2-3 most relevant questions
         selected_questions = [q for _, q in candidate_questions[:3]]
