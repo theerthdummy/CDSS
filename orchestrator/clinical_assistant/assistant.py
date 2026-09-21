@@ -109,7 +109,7 @@ class ClinicalConversationalAssistant:
         logger.info("[TIMESTAMP] Request received | session: %s | input: %s", session_id, message[:80])
 
         # Step 0: Out-of-Domain Guardrail Check
-        is_ood, ood_reason = DomainGuardrail.is_out_of_domain(message, memory)
+        is_ood, ood_reason = DomainGuardrail.is_out_of_domain(message, memory, buffer=buffer)
         if is_ood:
             logger.info("Out-of-domain query intercepted: %s (reason: %s)", message[:60], ood_reason)
             refusal_text = DomainGuardrail.get_refusal_response()

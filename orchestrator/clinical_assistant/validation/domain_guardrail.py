@@ -1,12 +1,12 @@
 """Domain Guardrail for Clinical Decision Support System.
 
-Strictly enforces that the Clinical Assistant only operates within the clinical,
-medical, pharmacological, and healthcare domain. Rejects all out-of-domain queries
-(e.g., geography, trivia, coding, sports, weather, politics, recipes, etc.).
+Strictly enforces that the Clinical Assistant operates within the clinical,
+medical, pharmacological, and healthcare domain. Rejects all explicit out-of-domain queries
+(e.g., astronomy, geography, coding, sports, weather, politics, recipes, pop culture).
 """
 
 import re
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 from orchestrator.clinical_assistant.memory.hybrid_memory import PatientEntityMemory
 
 # Explicit non-medical intent patterns (geography, astronomy, coding, pop culture, trivia, etc.)
@@ -36,9 +36,8 @@ OUT_OF_DOMAIN_PATTERNS = [
 ]
 
 # Medical and clinical terminology indicating valid in-domain queries
-# Extensively includes colloquial, subjective, and vague patient symptom expressions
 MEDICAL_KEYWORDS = {
-    # Subjective feelings & vague health descriptions
+    # Subjective feelings & symptoms
     "sick", "unwell", "ill", "illness", "hurt", "hurts", "hurting", "ache", "aches",
     "aching", "ached", "pain", "pains", "painful", "discomfort", "uneasy", "weird",
     "off", "bad", "awful", "terrible", "poorly", "queasy", "nauseous", "nausea",
@@ -49,14 +48,18 @@ MEDICAL_KEYWORDS = {
     "weakness", "drained", "lethargic", "lethargy", "groggy", "dazed", "confused",
     "confusion", "foggy", "fog", "malaise", "achey",
     
-    # Anatomy & body areas (vague or specific)
+    # Anatomy & body structures
     "head", "forehead", "temple", "eye", "eyes", "vision", "ear", "ears", "hearing",
-    "nose", "throat", "mouth", "tongue", "jaw", "tooth", "teeth", "neck", "shoulder",
-    "chest", "breast", "rib", "ribs", "back", "spine", "flank", "stomach", "tummy",
-    "belly", "gut", "abdomen", "abdominal", "pelvis", "groin", "arm", "elbow", "wrist",
-    "hand", "finger", "fingers", "leg", "thigh", "knee", "calf", "ankle", "foot",
-    "feet", "toe", "toes", "skin", "muscle", "muscles", "joint", "joints", "bone",
-    "heart", "lung", "lungs", "liver", "kidney", "kidneys", "brain", "bladder", "bowel",
+    "nose", "throat", "mouth", "tongue", "jaw", "tooth", "teeth", "molar", "wisdom",
+    "incisor", "premolar", "gingiva", "periodontal", "enamel", "pulp", "caries", "decay",
+    "neck", "shoulder", "chest", "breast", "rib", "ribs", "back", "spine", "flank",
+    "stomach", "tummy", "belly", "gut", "abdomen", "abdominal", "pelvis", "groin",
+    "arm", "elbow", "wrist", "hand", "finger", "fingers", "leg", "thigh", "knee",
+    "calf", "ankle", "foot", "feet", "toe", "toes", "pinky", "heel", "skin", "muscle",
+    "muscles", "joint", "joints", "bone", "bones", "tendon", "tendons", "ligament",
+    "ligaments", "fascia", "cartilage", "bursa", "nerve", "nerves", "heart", "lung",
+    "lungs", "liver", "kidney", "kidneys", "brain", "bladder", "bowel", "metatarsal",
+    "peroneus", "peroneal", "fibula", "tibia", "calcaneus", "talus", "cuboid",
     
     # Specific symptoms & clinical signs
     "headache", "migraine", "cough", "coughing", "breath", "breathing", "dyspnea",
@@ -70,7 +73,8 @@ MEDICAL_KEYWORDS = {
     "palpitation", "palpitations", "fluttering", "numbness", "numb", "tingling",
     "paresthesia", "tremor", "tremors", "shaky", "shaking", "twitch", "twitching",
     "bleeding", "bleed", "blood", "bruise", "bruising", "wound", "cut", "injury", "injured",
-    "fall", "fell", "lesion", "ulcer", "blister",
+    "fall", "fell", "lesion", "ulcer", "blister", "fracture", "sprain", "strain", "tear",
+    "tendinitis", "tendinopathy", "tenosynovitis", "bursitis", "subluxation", "dislocation",
     
     # Measurements & vitals
     "temperature", "temp", "blood pressure", "bp", "pulse", "heart rate", "hr",
@@ -85,14 +89,24 @@ MEDICAL_KEYWORDS = {
     "flu", "cold", "strep", "syndrome", "disorder", "disease", "illness", "condition",
     "triage", "emergency", "urgent", "chronic", "acute",
     
-    # Medications, treatments & healthcare terms
-    "medication", "medications", "medicine", "medicines", "drug", "drugs", "antibiotic",
-    "antibiotics", "aspirin", "ibuprofen", "advil", "motrin", "tylenol", "acetaminophen",
-    "paracetamol", "penicillin", "steroid", "insulin", "dose", "dosage", "pill", "pills",
-    "prescription", "prescribed", "side effect", "contraindication", "vaccine",
-    "vaccination", "immunization", "shot", "injection", "therapy", "treatment",
-    "hospital", "clinic", "er", "doctor", "nurse", "physician", "patient", "pediatric",
-    "geriatric", "health", "healthy", "healthcare", "test", "labs", "scan", "x-ray", "mri",
+    # Physiotherapy, Rehabilitation, Diagnostics & Therapeutics
+    "physio", "physiotherapy", "rehab", "rehabilitation", "exercise", "exercises",
+    "stretching", "strengthening", "mobilization", "manipulation", "massage", "orthotics",
+    "orthotic", "brace", "bracing", "splint", "splinting", "cast", "casting", "taping",
+    "weightbearing", "crutches", "walker", "wheelchair", "physical therapy", "pt",
+    "therapy", "treatment", "treat", "management", "manage", "recommend", "recommendation",
+    "recommending", "protocol", "guideline", "guidelines", "algorithm", "differential",
+    "diagnosis", "diagnostic", "prognosis", "etiology", "pathology", "pathophysiology",
+    "workup", "exam", "examination", "inspection", "palpation", "consult", "consultation",
+    "referral", "surgery", "surgical", "operation", "procedure", "resection", "excision",
+    "repair", "suture", "biopsy", "medication", "medications", "medicine", "medicines",
+    "drug", "drugs", "antibiotic", "antibiotics", "aspirin", "ibuprofen", "advil",
+    "motrin", "tylenol", "acetaminophen", "paracetamol", "steroid", "corticosteroid",
+    "nsaid", "nsaids", "injection", "injections", "dose", "dosage", "prescription",
+    "prescribed", "side effect", "contraindication", "vaccine", "vaccination", "shot",
+    "hospital", "clinic", "er", "doctor", "nurse", "physician", "clinician", "patient",
+    "pediatric", "geriatric", "health", "healthy", "healthcare", "test", "labs", "scan",
+    "x-ray", "xray", "radiograph", "radiography", "mri", "ct", "ultrasound", "ecg", "ekg",
 }
 
 # Conversational responses valid in clinical turn contexts
@@ -101,6 +115,9 @@ CLINICAL_CONVERSATIONAL_WORDS = {
     "constantly", "intermittently", "worse", "better", "mild", "severe", "moderate",
     "started", "days", "hours", "weeks", "yesterday", "today", "ago", "morning", "night",
     "left", "right", "sharp", "dull", "throbbing", "burning", "feels", "feeling",
+    "what", "how", "why", "when", "where", "which", "should", "could", "would", "can",
+    "kind", "type", "next", "step", "follow", "up", "recommend", "advice", "suggest",
+    "opinion", "plan", "duration", "time", "healing", "recovery", "for", "this", "that",
 }
 
 # Standardized out-of-domain refusal message
@@ -117,7 +134,12 @@ class DomainGuardrail:
     """Evaluates whether an incoming user query falls within the medical/clinical domain."""
 
     @classmethod
-    def is_out_of_domain(cls, text: str, memory: Optional[PatientEntityMemory] = None) -> Tuple[bool, str]:
+    def is_out_of_domain(
+        cls,
+        text: str,
+        memory: Optional[PatientEntityMemory] = None,
+        buffer: Optional[Any] = None,
+    ) -> Tuple[bool, str]:
         """Check if query is non-medical or out-of-domain.
         
         Returns:
@@ -144,7 +166,9 @@ class DomainGuardrail:
                 "feel sick", "feeling sick", "not feeling well", "feel unwell",
                 "feels weird", "feels off", "don't feel good", "not feeling good",
                 "feel bad", "feeling bad", "chest pain", "stomach ache", "short of breath",
-                "blood pressure", "heart rate", "side effect", "high temp", "low temp"
+                "blood pressure", "heart rate", "side effect", "high temp", "low temp",
+                "physical therapy", "recommend for this", "next step", "how to treat",
+                "what to do", "treatment plan", "recovery time"
             ]
         )
 
@@ -154,13 +178,14 @@ class DomainGuardrail:
         if has_medical_keyword or has_phrase or has_vitals:
             return False, "in_domain_medical"
 
-        # 3. Check for standard clinical conversational turn replies in ongoing sessions
-        # (e.g., "no headache", "yes for 2 days", "none of those", "since this morning")
-        if memory and (memory.confirmed_symptoms or memory.measurements or memory.medical_history):
-            # If in an active case, short replies to questions are valid clinical turn answers
-            tokens = set(re.findall(r"\b[a-z]+\b", lower))
-            if tokens & CLINICAL_CONVERSATIONAL_WORDS or len(lower.split()) <= 6:
-                return False, "in_domain_conversational_reply"
+        # 3. Check for ongoing active clinical session context
+        # If there is prior conversation in buffer or clinical facts in memory, allow conversational follow-up turns
+        has_prior_turns = bool(buffer and hasattr(buffer, "get_messages") and len(buffer.get_messages()) > 0)
+        has_prior_facts = bool(memory and (memory.confirmed_symptoms or memory.measurements or memory.medical_history))
+
+        if has_prior_turns or has_prior_facts:
+            # Inside an active clinical case, follow-up inquiries are valid clinical consultation turns
+            return False, "in_domain_active_session_followup"
 
         # 4. Check for pure polite greetings
         greeting_patterns = [
@@ -176,5 +201,5 @@ class DomainGuardrail:
 
     @classmethod
     def get_refusal_response(cls) -> str:
-        """Returns the standardized, empathetic clinical refusal response."""
+        """Returns the standardized clinical refusal response."""
         return OUT_OF_DOMAIN_RESPONSE
