@@ -946,6 +946,14 @@
     letter-spacing: -0.2px;
 }
 
+.formatted-markdown .md-heading.md-subheading {
+    font-size: 0.92rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    margin: 12px 0 4px 0;
+    letter-spacing: 0;
+}
+
 .formatted-markdown .md-heading:first-child {
     margin-top: 0;
 }

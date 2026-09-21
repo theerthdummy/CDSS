@@ -4,16 +4,14 @@
  * Safely parses:
  * - Section headings (### or **Heading**)
  * - Urgent safety banners (### ⚠️ Important Medical Safety Advice or **URGENT ADVICE**)
- * - Bullet points (- or * or •)
+ * - Bullet points (- or * or •) with zero double-bullet artifacts
  * - Numbered questions/lists (1. 2.)
  * - Inline bold (**text**), italic (*text*), and code (`text`)
  * - Cleans up escaped markdown (\*\* -> **)
- * - Strips accidental HTML tags (<br>, <table>, etc.)
+ * - Strips accidental HTML tags (<br>, <table>, etc.) and orphan pipes (|)
  */
-function parseInlineMarkdown(text) {
+function cleanMarkdownText(text) {
     if (!text) return "";
-
-    // 1. Clean backslash escaping
     let clean = text
         .replace(/\\\*/g, "*")
         .replace(/\\_/g, "_")
@@ -21,7 +19,18 @@ function parseInlineMarkdown(text) {
         .replace(/\\</g, "<")
         .replace(/\\>/g, ">");
 
-    // 2. Split by bold **text**, code `text`, and italic *text*
+    // Fix unbalanced bold tag if line has ending **: but missing opening **
+    if (/^[^*]+?\*\*:/.test(clean)) {
+        clean = `**${clean}`;
+    }
+    return clean;
+}
+
+function parseInlineMarkdown(text) {
+    if (!text) return "";
+    const clean = cleanMarkdownText(text);
+
+    // Split by bold **text**, code `text`, and italic *text*
     const parts = clean.split(/(\*\*[^*]+?\*\*|`[^`]+?`|\*[^*]+?\*)/g);
 
     return parts.map((part, idx) => {
@@ -94,8 +103,8 @@ function MarkdownRenderer({ content }) {
     }
 
     for (let i = 0; i < lines.length; i++) {
-        const rawLine = lines[i];
-        const trimmed = rawLine.trim();
+        let rawLine = lines[i];
+        let trimmed = rawLine.trim();
 
         if (!trimmed) {
             flushList();
@@ -106,33 +115,25 @@ function MarkdownRenderer({ content }) {
         if (/^\|?[\s\-:|]+\|?$/.test(trimmed)) {
             continue;
         }
-        if (/^\|\s*(?:Category|Considerations|Details|Key|Value|Field|Information|Status|Description|Priority)\s*(?:\|.*)?\|?$/i.test(trimmed)) {
+        if (/^\|\s*(?:Category|Considerations|Details|Key|Value|Field|Information|Status|Description|Priority|Key Distinguishing Features)\s*(?:\|.*)?\|?$/i.test(trimmed)) {
             continue;
         }
 
-        // Table row e.g. | Key | Value | or | Key | Value -> convert to neat bullet
-        if (trimmed.startsWith("|") || (trimmed.includes("|") && !trimmed.startsWith("-") && !trimmed.startsWith("*"))) {
+        // Table row e.g. | Key | Value | -> convert to neat bullet
+        if (trimmed.startsWith("|") || (trimmed.includes("|") && !trimmed.startsWith("-") && !trimmed.startsWith("*") && !trimmed.startsWith("•"))) {
             flushList();
             const cells = trimmed
                 .replace(/^\||\|$/g, "")
                 .split("|")
                 .map((c) => c.trim())
                 .filter(Boolean);
-            if (cells.length === 2) {
+            if (cells.length >= 2) {
                 const header = cells[0].replace(/^\*+|\*+$/g, "");
+                const body = cells.slice(1).join(" — ").replace(/^[\s•\-\u2022]+/, "");
                 elements.push(
                     <p key={`tbl-${i}`} className="md-bullet-line">
                         <span className="md-bullet-dot">•</span>
-                        <strong>{header}:</strong> {parseInlineMarkdown(cells[1])}
-                    </p>
-                );
-                continue;
-            } else if (cells.length > 2) {
-                const header = cells[0].replace(/^\*+|\*+$/g, "");
-                elements.push(
-                    <p key={`tbl-${i}`} className="md-bullet-line">
-                        <span className="md-bullet-dot">•</span>
-                        <strong>{header}:</strong> {parseInlineMarkdown(cells.slice(1).join(" — "))}
+                        <strong>{header}:</strong> {parseInlineMarkdown(body)}
                     </p>
                 );
                 continue;
@@ -146,6 +147,9 @@ function MarkdownRenderer({ content }) {
                 continue;
             }
         }
+
+        // Clean orphan pipes
+        trimmed = trimmed.replace(/\s*\|\s*$/, "").replace(/^\s*\|\s*/, "");
 
         // Urgent alert heading e.g. ### ⚠️ Important Medical Safety Advice or **URGENT ADVICE**
         if (
@@ -176,25 +180,30 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
-        // Standalone bold heading e.g. **Clinical Status & Known Facts:**
+        // Standalone bold subheader e.g. **Emergent / Must-Not-Miss:** or **Clinical Status & Known Facts:**
         if (/^\*\*[^*]+?\*\*:?$/.test(trimmed)) {
             flushList();
+            const cleanTitle = trimmed.replace(/\*\*/g, "").replace(/:$/, "");
             elements.push(
-                <h4 key={`bh-${i}`} className="md-heading">
-                    {trimmed.replace(/\*\*/g, "").replace(/:$/, "")}
+                <h4 key={`bh-${i}`} className="md-heading md-subheading">
+                    {cleanTitle}
                 </h4>
             );
             continue;
         }
 
         // Bullet list: - item or * item or • item
-        const bulletMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+        const bulletMatch = trimmed.match(/^[-*•\u2022]\s+(.+)$/);
         if (bulletMatch) {
             if (!currentList || currentList.type !== "ul") {
                 flushList();
                 currentList = { type: "ul", items: [] };
             }
-            currentList.items.push(bulletMatch[1]);
+            // Strip any nested/redundant bullets from item text
+            let itemText = bulletMatch[1].replace(/^[-*•\u2022]\s+/, "");
+            itemText = itemText.replace(/(\*\*[^*]+?\*\*:\s*)[-*•\u2022]\s+/, "$1");
+            itemText = itemText.replace(/\s*\|\s*$/, "");
+            currentList.items.push(itemText);
             continue;
         }
 
