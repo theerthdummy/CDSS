@@ -29,7 +29,7 @@ function Header({ onOpenSystemStatus, onReset, onShowToast }) {
                             <h1>Clinical Decision Support System</h1>
                             <span className="version-pill">v3.0</span>
                         </div>
-                        <p className="header-subtitle">Evidence-grounded progressive clinical reasoning</p>
+                        <p className="header-subtitle">Evidence-grounded physician decision support co-pilot</p>
                     </div>
                 </div>
 

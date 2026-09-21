@@ -105,11 +105,11 @@ CLINICAL_CONVERSATIONAL_WORDS = {
 
 # Standardized out-of-domain refusal message
 OUT_OF_DOMAIN_RESPONSE = (
-    "**Out of Domain**\n"
-    "- I am a dedicated Clinical Decision Support Assistant designed solely for medical, symptom, and healthcare guidance.\n"
-    "- I cannot answer non-medical questions such as general geography, trivia, math, or coding (such as distances to the moon, sports, or programming).\n\n"
-    "**How I can help**\n"
-    "- Please describe any patient symptoms, feelings of being unwell, clinical notes, medications, or health concerns, and I will be glad to assist you."
+    "**Out of Clinical Domain**\n"
+    "- I am a dedicated Clinical Decision Support System (CDSS) Physician Co-Pilot designed exclusively for clinical consultation, diagnostic reasoning, and healthcare decision support.\n"
+    "- I cannot answer non-medical questions such as general geography, trivia, math, or coding (such as celestial distances, sports, weather, or programming).\n\n"
+    "**Clinical Consultation Capabilities**\n"
+    "- Please provide a clinical case presentation, patient history, vitals, lab results, or diagnostic inquiry to assist your clinical workflow."
 )
 
 

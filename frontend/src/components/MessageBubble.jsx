@@ -34,7 +34,7 @@ function MessageBubble({ sender, text, kind = "text", timestamp, isUrgent, valid
                             {isUser ? "👤" : "🩺"}
                         </span>
                         <span className="message-sender">
-                            {isUser ? "Patient / Clinician" : "Dr. Assistant (Clinical AI)"}
+                            {isUser ? "Attending Clinician / Physician" : "CDSS Clinical Co-Pilot"}
                         </span>
                     </div>
 

@@ -5,20 +5,20 @@ import { useChatState } from "../context/ChatContext";
 
 const CLINICAL_EXAMPLES = [
     {
-        title: "Isolated Fever in Adult",
-        text: "55 y.o female with temp 102°F for 2 days. No history, no medications.",
+        title: "FUO in Immunocompetent Adult",
+        text: "55 y.o female with temp 102°F for 2 days. Unrevealing initial exam, no focal source, negative UA.",
     },
     {
-        title: "Emergency Red Flag (Altered Mental Status)",
-        text: "I have had a high fever of 103 for 24 hours and I started seeing strange hallucinations.",
+        title: "Toxic Encephalopathy vs. CNS Infection",
+        text: "High fever 103°F with acute visual hallucinations, confusion, and mild nuchal discomfort.",
     },
     {
-        title: "Vague Symptoms Presentation",
-        text: "I feel really sick and uneasy today with some stomach discomfort.",
+        title: "Undifferentiated Systemic Presentation",
+        text: "Profound malaise, diffuse myalgias, intermittent low-grade fever, and unexplained transaminitis.",
     },
     {
-        title: "Acute Chest Pain Presentation",
-        text: "Patient reports sharp substernal chest pain for 2 hours with shortness of breath.",
+        title: "Atypical Acute Coronary Syndrome",
+        text: "Sharp retrosternal chest pain for 2h, diaphoresis, dyspnea, normal baseline ECG with diabetes history.",
     },
 ];
 
@@ -58,35 +58,35 @@ function ChatWindow({ onSelectPrompt, onShowToast }) {
 
     // Auto-scroll when new messages arrive or loading stages change
     useEffect(() => {
-        const isNewMessage = messages.length > prevMessagesCountRef.current;
-        const lastMessage = messages[messages.length - 1];
-        const isUserSender = lastMessage?.sender === "user";
-
-        if (isUserSender || !isUserScrolledUp) {
-            // User sent a message or was already at the bottom -> auto-scroll smoothly
-            scrollToBottom("smooth");
-        } else if (isNewMessage && isUserScrolledUp) {
-            // New message arrived while user was reading history -> notify without jumping
-            setHasUnreadBelow(true);
+        if (messages.length > prevMessagesCountRef.current) {
+            if (isUserScrolledUp) {
+                setHasUnreadBelow(true);
+            } else {
+                scrollToBottom("smooth");
+            }
         }
-
         prevMessagesCountRef.current = messages.length;
-    }, [messages, isLoading, loadingStage, isUserScrolledUp, scrollToBottom]);
+    }, [messages.length, isUserScrolledUp, scrollToBottom]);
 
-    const hasMessages = messages.length > 0;
+    // Handle initial mount or reset
+    useEffect(() => {
+        scrollToBottom("auto");
+    }, [scrollToBottom]);
+
+    const hasMessages = messages && messages.length > 0;
 
     return (
-        <section className="chat-window-card" aria-label="Clinical Conversation Area">
+        <section className="chat-window-card" aria-label="Clinical Decision Support Workspace">
             <div className="chat-window-header">
                 <div className="chat-header-title">
-                    <span className="chat-header-icon" aria-hidden="true">💬</span>
+                    <span className="chat-header-icon" aria-hidden="true">🩺</span>
                     <div>
-                        <h2>Clinical Consultation</h2>
-                        <span className="chat-header-subtitle">Evidence-Grounded Physician Assistant</span>
+                        <h2>Clinical Consultation Co-Pilot</h2>
+                        <span className="chat-header-subtitle">Evidence-Grounded Physician Decision Support</span>
                     </div>
                 </div>
                 {hasMessages && (
-                    <span className="message-count-pill">
+                    <span className="message-count-pill" aria-label={`${messages.length} messages in consultation`}>
                         {messages.length} {messages.length === 1 ? "turn" : "turns"}
                     </span>
                 )}
@@ -104,12 +104,12 @@ function ChatWindow({ onSelectPrompt, onShowToast }) {
                                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                             </svg>
                         </div>
-                        <h3>Clinical Decision Support Assistant</h3>
+                        <h3>Clinical Decision Support Co-Pilot</h3>
                         <p className="empty-description">
-                            Empathetic, evidence-grounded clinical reasoning powered by hosted OpenAI GPT and Biomedical Vector RAG.
+                            High-yield diagnostic reasoning, stratified differentials, and clinical decision support for attending physicians and medical specialists.
                         </p>
                         <p className="empty-sub-hint">
-                            Select a clinical scenario below or describe your patient's symptoms:
+                            Select a clinical case presentation below or enter physician consultation notes:
                         </p>
 
                         <div className="example-scenarios-grid">

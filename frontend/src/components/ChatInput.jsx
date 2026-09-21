@@ -54,7 +54,7 @@ function ChatInput({ value = "", onChange, onSend, disabled }) {
                     placeholder={
                         isDeepMode
                             ? "Enter comprehensive patient presentation or clinical note for 5-agent pipeline analysis..."
-                            : "Type patient symptoms, history, or answers to follow-up questions..."
+                            : "Enter clinical case presentation, physician note, lab findings, or differential query..."
                     }
                     aria-label="Clinical message or symptom input"
                     rows={1}
