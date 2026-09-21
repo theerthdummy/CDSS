@@ -31,11 +31,60 @@ export function ChatProvider({ children }) {
     const [followUpQuestions, setFollowUpQuestions] = useState([]);
     const [llmMetadata, setLlmMetadata] = useState(null);
     const [consultationMode, setConsultationMode] = useState("conversational"); // "conversational" | "deep_diagnostic"
+    const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+    // Recent Consultations History
+    const [recentSessions, setRecentSessions] = useState(() => {
+        try {
+            const saved = localStorage.getItem("cdss_recent_sessions");
+            return saved ? JSON.parse(saved) : [
+                { id: "sample-1", title: "FUO in 55yo Female (Temp 102°F)", timestamp: new Date().toISOString(), preview: "Isolated acute febrile illness evaluation" },
+                { id: "sample-2", title: "Atypical Chest Pain & DOE", timestamp: new Date(Date.now() - 3600000).toISOString(), preview: "ACS rule-out with normal baseline ECG" },
+                { id: "sample-3", title: "Altered Mental Status & Fever", timestamp: new Date(Date.now() - 86400000).toISOString(), preview: "Toxic encephalopathy vs. CNS infection" },
+            ];
+        } catch {
+            return [];
+        }
+    });
 
     const [isLoading, setIsLoading] = useState(false);
     const [loadingStage, setLoadingStage] = useState("");
     const [error, setError] = useState(null);
     const [systemHealth, setSystemHealth] = useState(null);
+
+    // Save recent sessions to localStorage
+    useEffect(() => {
+        try {
+            localStorage.setItem("cdss_recent_sessions", JSON.stringify(recentSessions));
+        } catch {
+            // ignore
+        }
+    }, [recentSessions]);
+
+    const addRecentSession = useCallback((title, previewText) => {
+        setRecentSessions((prev) => {
+            const exists = prev.find((s) => s.title === title);
+            if (exists) return prev;
+            return [
+                {
+                    id: `session-${Date.now()}`,
+                    title: title.length > 36 ? `${title.slice(0, 36)}...` : title,
+                    timestamp: new Date().toISOString(),
+                    preview: previewText || "Clinical consultation",
+                },
+                ...prev.slice(0, 19),
+            ];
+        });
+    }, []);
+
+    const deleteRecentSession = useCallback((id) => {
+        setRecentSessions((prev) => prev.filter((s) => s.id !== id));
+    }, []);
+
+    const clearAllSessions = useCallback(() => {
+        setRecentSessions([]);
+    }, []);
 
     // Initial system health check
     const refreshSystemHealth = useCallback(async () => {
@@ -73,6 +122,11 @@ export function ChatProvider({ children }) {
         setError(null);
         setMessages((prev) => [...prev, createMessage("user", trimmed)]);
         setIsLoading(true);
+
+        // Save to recent sessions if first message
+        if (messages.length === 0) {
+            addRecentSession(trimmed);
+        }
 
         try {
             if (activeMode === "conversational") {
@@ -202,6 +256,14 @@ export function ChatProvider({ children }) {
                 llmMetadata,
                 consultationMode,
                 setConsultationMode,
+                isTelemetryOpen,
+                setIsTelemetryOpen,
+                isSidebarOpen,
+                setIsSidebarOpen,
+                recentSessions,
+                addRecentSession,
+                deleteRecentSession,
+                clearAllSessions,
                 isLoading,
                 loadingStage,
                 error,

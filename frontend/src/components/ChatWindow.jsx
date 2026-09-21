@@ -25,158 +25,114 @@ const CLINICAL_EXAMPLES = [
 function ChatWindow({ onSelectPrompt, onShowToast }) {
     const { messages, isLoading, loadingStage, followUpQuestions, sendMessage } = useChatState();
     const messagesContainerRef = useRef(null);
-    const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
-    const [hasUnreadBelow, setHasUnreadBelow] = useState(false);
+    const lastUserMsgRef = useRef(null);
     const prevMessagesCountRef = useRef(messages.length);
 
-    // Scroll to bottom smoothly within the internal container
-    const scrollToBottom = useCallback((behavior = "smooth") => {
-        const container = messagesContainerRef.current;
-        if (!container) return;
-        container.scrollTo({
-            top: container.scrollHeight,
-            behavior,
-        });
-        setIsUserScrolledUp(false);
-        setHasUnreadBelow(false);
-    }, []);
-
-    // Handle user scrolling inside the message container
-    const handleScroll = () => {
-        const container = messagesContainerRef.current;
-        if (!container) return;
-
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-        const scrolledUp = distanceFromBottom > 100;
-
-        setIsUserScrolledUp(scrolledUp);
-        if (!scrolledUp) {
-            setHasUnreadBelow(false);
-        }
-    };
-
-    // Auto-scroll when new messages arrive or loading stages change
+    // Scroll to the latest user message when sent, but DO NOT auto-scroll down to bottom on assistant response
     useEffect(() => {
-        if (messages.length > prevMessagesCountRef.current) {
-            if (isUserScrolledUp) {
-                setHasUnreadBelow(true);
-            } else {
-                scrollToBottom("smooth");
+        const isNewMessage = messages.length > prevMessagesCountRef.current;
+        if (isNewMessage) {
+            const lastMsg = messages[messages.length - 1];
+            if (lastMsg?.sender === "user" && lastUserMsgRef.current) {
+                // When user sends a message, gently ensure the user message is in view
+                lastUserMsgRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
             }
+            // When assistant response arrives, DO NOT scroll to bottom; let user scroll manually to read
         }
         prevMessagesCountRef.current = messages.length;
-    }, [messages.length, isUserScrolledUp, scrollToBottom]);
-
-    // Handle initial mount or reset
-    useEffect(() => {
-        scrollToBottom("auto");
-    }, [scrollToBottom]);
+    }, [messages]);
 
     const hasMessages = messages && messages.length > 0;
 
     return (
-        <section className="chat-window-card" aria-label="Clinical Decision Support Workspace">
-            <div className="chat-window-header">
-                <div className="chat-header-title">
-                    <span className="chat-header-icon" aria-hidden="true">🩺</span>
-                    <div>
-                        <h2>Clinical Consultation Co-Pilot</h2>
-                        <span className="chat-header-subtitle">Evidence-Grounded Physician Decision Support</span>
-                    </div>
-                </div>
-                {hasMessages && (
-                    <span className="message-count-pill" aria-label={`${messages.length} messages in consultation`}>
-                        {messages.length} {messages.length === 1 ? "turn" : "turns"}
-                    </span>
-                )}
-            </div>
-
+        <div className="chatgpt-conversation-stream">
             <div
                 ref={messagesContainerRef}
-                className="chat-messages-container"
-                onScroll={handleScroll}
+                className="chat-messages-scroll-area"
             >
                 {!hasMessages ? (
-                    <div className="empty-conversation-state">
-                        <div className="empty-icon-shield" aria-hidden="true">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                            </svg>
+                    <div className="chatgpt-hero-state">
+                        <div className="hero-badge-pill">
+                            <span className="hero-status-pulse" />
+                            <span>Biomedical RAG & Web Intelligence Studio</span>
                         </div>
-                        <h3>Clinical Decision Support Co-Pilot</h3>
-                        <p className="empty-description">
-                            High-yield diagnostic reasoning, stratified differentials, and clinical decision support for attending physicians and medical specialists.
-                        </p>
-                        <p className="empty-sub-hint">
-                            Select a clinical case presentation below or enter physician consultation notes:
+
+                        <h1 className="hero-gradient-title">
+                            DocPilot <span className="gradient-highlight">Clinical Co-Pilot</span>
+                        </h1>
+                        <p className="hero-subtext">
+                            Evidence-grounded diagnostic reasoning, stratified differentials, and clinical co-pilot support for attending physicians.
                         </p>
 
-                        <div className="example-scenarios-grid">
+                        <div className="hero-scenarios-grid">
                             {CLINICAL_EXAMPLES.map((example, idx) => (
                                 <button
                                     key={idx}
                                     type="button"
-                                    className="scenario-card-btn"
+                                    className="hero-scenario-card"
                                     onClick={() => onSelectPrompt && onSelectPrompt(example.text)}
                                 >
-                                    <div className="scenario-card-top">
-                                        <span className="scenario-badge">Scenario {idx + 1}</span>
-                                        <span className="scenario-arrow">→</span>
+                                    <div className="scenario-card-header">
+                                        <span className="scenario-tag">CASE 0{idx + 1}</span>
+                                        <span className="scenario-arrow-icon">↗</span>
                                     </div>
-                                    <span className="scenario-title">{example.title}</span>
-                                    <span className="scenario-text">"{example.text}"</span>
+                                    <span className="scenario-headline">{example.title}</span>
+                                    <span className="scenario-snippet">"{example.text}"</span>
                                 </button>
                             ))}
                         </div>
                     </div>
                 ) : (
-                    <div className="messages-flow">
-                        {messages.map((msg) => (
-                            <MessageBubble
-                                key={msg.id}
-                                sender={msg.sender}
-                                text={msg.text}
-                                kind={msg.kind}
-                                timestamp={msg.timestamp}
-                                isUrgent={msg.isUrgent}
-                                validation={msg.validation}
-                                onShowToast={onShowToast}
-                            />
-                        ))}
+                    <div className="messages-stream-list">
+                        {messages.map((msg, index) => {
+                            const isLastUser = msg.sender === "user" && index >= messages.length - 2;
+                            return (
+                                <div key={msg.id} ref={isLastUser ? lastUserMsgRef : null} className="message-wrapper-anchor">
+                                    <MessageBubble
+                                        sender={msg.sender}
+                                        text={msg.text}
+                                        kind={msg.kind}
+                                        timestamp={msg.timestamp}
+                                        isUrgent={msg.isUrgent}
+                                        validation={msg.validation}
+                                        onShowToast={onShowToast}
+                                    />
+                                </div>
+                            );
+                        })}
 
-                        {/* Loading State with Progressive Clinical Stage */}
+                        {/* Loading State with Progressive Stage */}
                         {isLoading && (
                             <div className="assistant-loading-row" aria-live="polite">
                                 <LoadingSpinner stage={loadingStage} />
                             </div>
                         )}
 
-                        {/* Suggested Follow-up Quick-Reply Chips */}
+                        {/* Suggested Follow-up Quick Clarifications */}
                         {!isLoading && followUpQuestions && followUpQuestions.length > 0 && (
                             <div className="followup-chips-section">
-                                <span className="chips-title">Suggested Quick Clarifications:</span>
+                                <span className="chips-title">High-Yield Clinical Discriminators:</span>
                                 <div className="chips-list">
                                     <button
                                         type="button"
                                         className="chip-btn"
-                                        onClick={() => sendMessage("No cough, sore throat, or shortness of breath.")}
+                                        onClick={() => sendMessage("No cough, sore throat, or respiratory symptoms.")}
                                     >
-                                        No respiratory symptoms
+                                        No respiratory signs
                                     </button>
                                     <button
                                         type="button"
                                         className="chip-btn"
-                                        onClick={() => sendMessage("No severe headache or neck stiffness.")}
+                                        onClick={() => sendMessage("Negative for meningismus, neck stiffness, or severe headache.")}
                                     >
-                                        No headache or stiff neck
+                                        No nuchal rigidity / headache
                                     </button>
                                     <button
                                         type="button"
                                         className="chip-btn"
-                                        onClick={() => sendMessage("No pain or burning when urinating.")}
+                                        onClick={() => sendMessage("No dysuria, hematuria, or flank tenderness.")}
                                     >
-                                        No urinary discomfort
+                                        No urinary / flank signs
                                     </button>
                                 </div>
                             </div>
@@ -184,24 +140,9 @@ function ChatWindow({ onSelectPrompt, onShowToast }) {
                     </div>
                 )}
             </div>
-
-            {/* Floating Scroll-to-Bottom Button (ChatGPT style) */}
-            {isUserScrolledUp && (
-                <button
-                    type="button"
-                    className={`btn-scroll-bottom ${hasUnreadBelow ? "btn-scroll-bottom-unread" : ""}`}
-                    onClick={() => scrollToBottom("smooth")}
-                    aria-label="Scroll to latest messages"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <polyline points="19 12 12 19 5 12" />
-                    </svg>
-                    <span>{hasUnreadBelow ? "New messages below" : "Scroll to latest"}</span>
-                </button>
-            )}
-        </section>
+        </div>
     );
 }
 
 export default ChatWindow;
+

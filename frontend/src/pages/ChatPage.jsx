@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Header from "../components/Header";
+import LeftSidebar from "../components/LeftSidebar";
 import ChatWindow from "../components/ChatWindow";
 import ChatInput from "../components/ChatInput";
 import PatientSidebar from "../components/PatientSidebar";
@@ -10,7 +11,14 @@ import Footer from "../components/Footer";
 import { useChatState } from "../context/ChatContext";
 
 function ChatPage() {
-    const { sendMessage, resetConsultation, isLoading } = useChatState();
+    const {
+        sendMessage,
+        resetConsultation,
+        isLoading,
+        isTelemetryOpen,
+        setIsTelemetryOpen,
+    } = useChatState();
+
     const [inputText, setInputText] = useState("");
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isEvidenceDrawerOpen, setIsEvidenceDrawerOpen] = useState(false);
@@ -30,38 +38,76 @@ function ChatPage() {
     };
 
     return (
-        <div className="app-layout">
-            <Header
+        <div className="docpilot-app-shell">
+            {/* ChatGPT / DocPilot Left Navigation Sidebar */}
+            <LeftSidebar
                 onOpenSystemStatus={() => setIsStatusModalOpen(true)}
-                onReset={resetConsultation}
                 onShowToast={showToast}
             />
 
-            <div className="main-content-grid">
-                {/* Primary Column: Conversation Window and Clinical Input */}
-                <main className="conversation-column" id="main-content">
+            {/* Central Fluid Conversation Canvas */}
+            <main className="docpilot-main-canvas" id="main-content">
+                <Header
+                    onOpenSystemStatus={() => setIsStatusModalOpen(true)}
+                    onReset={resetConsultation}
+                    onShowToast={showToast}
+                />
+
+                <div className="docpilot-conversation-container">
                     <ChatWindow
                         onSelectPrompt={handleSelectPrompt}
                         onShowToast={showToast}
                     />
-                    <ChatInput
-                        value={inputText}
-                        onChange={setInputText}
-                        onSend={handleSend}
-                        disabled={isLoading}
-                    />
-                    <Footer />
-                </main>
+                </div>
 
-                {/* Secondary Column: Authoritative Patient State & Triage Sidebar */}
-                <aside className="sidebar-column">
-                    <PatientSidebar
-                        onOpenEvidence={() => setIsEvidenceDrawerOpen(true)}
-                    />
+                <ChatInput
+                    value={inputText}
+                    onChange={setInputText}
+                    onSend={handleSend}
+                    disabled={isLoading}
+                />
+
+                <Footer />
+            </main>
+
+            {/* Slide-out Patient Demographics & Telemetry Drawer */}
+            <div
+                className={`telemetry-drawer-overlay ${isTelemetryOpen ? "open" : ""}`}
+                onClick={() => setIsTelemetryOpen(false)}
+                aria-hidden={!isTelemetryOpen}
+            >
+                <aside
+                    className="telemetry-drawer-panel"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Clinical Telemetry & Patient Demographics"
+                >
+                    <div className="telemetry-drawer-header">
+                        <div className="drawer-title-wrap">
+                            <span className="drawer-icon">📊</span>
+                            <div>
+                                <h3 className="drawer-title">Patient Telemetry & State</h3>
+                                <span className="drawer-subtitle">Authoritative Clinical State & Hypotheses</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-close-drawer"
+                            onClick={() => setIsTelemetryOpen(false)}
+                            aria-label="Close telemetry drawer"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="telemetry-drawer-content">
+                        <PatientSidebar
+                            onOpenEvidence={() => setIsEvidenceDrawerOpen(true)}
+                        />
+                    </div>
                 </aside>
             </div>
 
-            {/* Overlays */}
+            {/* Overlays & Modals */}
             <EvidenceDrawer
                 isOpen={isEvidenceDrawerOpen}
                 onClose={() => setIsEvidenceDrawerOpen(false)}

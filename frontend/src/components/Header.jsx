@@ -2,7 +2,15 @@ import ThemeToggle from "./ThemeToggle";
 import { useChatState } from "../context/ChatContext";
 
 function Header({ onOpenSystemStatus, onReset, onShowToast }) {
-    const { systemHealth, consultationMode, setConsultationMode, isLoading } = useChatState();
+    const {
+        systemHealth,
+        isLoading,
+        isSidebarOpen,
+        setIsSidebarOpen,
+        isTelemetryOpen,
+        setIsTelemetryOpen,
+        evidence,
+    } = useChatState();
 
     const isHealthy = systemHealth?.overall === "healthy";
     const statusLabel = isHealthy ? "System Ready" : systemHealth?.overall === "degraded" ? "Degraded" : "Connecting...";
@@ -10,86 +18,68 @@ function Header({ onOpenSystemStatus, onReset, onShowToast }) {
     const handleReset = () => {
         if (isLoading) return;
         onReset && onReset();
-        onShowToast && onShowToast("New clinical consultation started. Patient context reset.", "info");
+        onShowToast && onShowToast("Consultation reset. Context cleared.", "info");
     };
 
     return (
-        <header className="app-header">
-            <div className="header-container">
-                {/* Brand & Title */}
-                <div className="header-brand">
-                    <div className="header-mark" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="4" x2="12" y2="20" />
-                            <line x1="4" y1="12" x2="20" y2="12" />
+        <header className="chatgpt-top-header">
+            <div className="top-header-left">
+                {!isSidebarOpen && (
+                    <button
+                        type="button"
+                        className="btn-expand-sidebar-top"
+                        onClick={() => setIsSidebarOpen(true)}
+                        title="Open Navigation Sidebar"
+                        aria-label="Open Sidebar"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="9" y1="3" x2="9" y2="21" />
                         </svg>
-                    </div>
-                    <div className="header-titles">
-                        <div className="header-title-line">
-                            <h1>Clinical Decision Support System</h1>
-                            <span className="version-pill">v3.0</span>
-                        </div>
-                        <p className="header-subtitle">Evidence-grounded physician decision support co-pilot</p>
-                    </div>
+                    </button>
+                )}
+
+                <div className="header-scope-indicator">
+                    <span className="scope-dot" />
+                    <span className="scope-text">
+                        Scope: <strong>Active Clinical Decision Support (CDSS)</strong>
+                    </span>
                 </div>
+            </div>
 
-                {/* Center / Mode Selector */}
-                <div className="consultation-mode-toggle" role="group" aria-label="Consultation Mode">
-                    <button
-                        type="button"
-                        className={`mode-btn ${consultationMode === "conversational" ? "mode-btn-active" : ""}`}
-                        onClick={() => setConsultationMode("conversational")}
-                        title="Fast interactive clinical dialogue with progressive questioning"
-                    >
-                        <span className="mode-dot" />
-                        <span>Conversational Consultation</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`mode-btn ${consultationMode === "deep_diagnostic" ? "mode-btn-active" : ""}`}
-                        onClick={() => setConsultationMode("deep_diagnostic")}
-                        title="Full 5-Agent Diagnostic Fusion Pipeline (Clarifier + RAG + Web + Fusion + Reasoning)"
-                    >
-                        <span className="mode-dot" />
-                        <span>5-Agent Deep Diagnostic</span>
-                    </button>
-                </div>
+            {/* Navigation Badges / Links (DocPilot Studio Style) */}
+            <div className="top-header-center-links">
+                <span className="studio-nav-item active-nav">Clinical Co-Pilot</span>
+                <span className="studio-nav-item" onClick={() => onShowToast && onShowToast("Biomedical Vector RAG (BioBERT + Qdrant) Active", "info")}>Vector RAG</span>
+                <span className="studio-nav-item" onClick={() => onShowToast && onShowToast("PubMed & Tavily Evidence Scanner Active", "info")}>PubMed Scanner</span>
+                <span className="studio-nav-item" onClick={() => setIsTelemetryOpen(true)}>
+                    📖 Patient File {evidence.length > 0 ? `(${evidence.length})` : ""}
+                </span>
+            </div>
 
-                {/* Actions & Utilities */}
-                <div className="header-actions">
-                    {/* Live System Status Trigger */}
-                    <button
-                        type="button"
-                        className={`status-indicator-btn ${isHealthy ? "status-ready" : "status-warning"}`}
-                        onClick={onOpenSystemStatus}
-                        title="Click to view infrastructure & agent health"
-                        aria-label="View system infrastructure and agent status"
-                    >
-                        <span className="status-dot" aria-hidden="true" />
-                        <span className="status-label">{statusLabel}</span>
-                    </button>
+            {/* Right Actions */}
+            <div className="top-header-right-actions">
+                <button
+                    type="button"
+                    className={`status-chip-btn ${isHealthy ? "status-ready" : "status-warning"}`}
+                    onClick={onOpenSystemStatus}
+                    title="View 5-Agent Microservice Health & LLM Status"
+                >
+                    <span className="chip-dot" />
+                    <span>{statusLabel}</span>
+                </button>
 
-                    {/* Theme Toggle (Light / Dark / System) */}
-                    <ThemeToggle />
+                <ThemeToggle />
 
-                    {/* New Case Button */}
-                    <button
-                        type="button"
-                        className="btn-new-case"
-                        onClick={handleReset}
-                        disabled={isLoading}
-                        title="Clear conversation and begin a new patient case"
-                        aria-label="Start new clinical consultation"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                            <path d="M21 3v5h-5" />
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                            <path d="M8 16H3v5" />
-                        </svg>
-                        <span>New Consultation</span>
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    className="btn-clear-consultation"
+                    onClick={handleReset}
+                    disabled={isLoading}
+                    title="Clear current case and start fresh consultation"
+                >
+                    ✕ Clear Case
+                </button>
             </div>
         </header>
     );
