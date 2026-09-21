@@ -58,7 +58,7 @@ function ChatWindow({ onSelectPrompt, onShowToast }) {
                         </div>
 
                         <h1 className="hero-gradient-title">
-                            DocPilot <span className="gradient-highlight">Clinical Co-Pilot</span>
+                            CDSS <span className="gradient-highlight">Clinical Co-Pilot</span>
                         </h1>
                         <p className="hero-subtext">
                             Evidence-grounded diagnostic reasoning, stratified differentials, and clinical co-pilot support for attending physicians.

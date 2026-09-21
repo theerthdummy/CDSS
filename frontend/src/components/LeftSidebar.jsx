@@ -54,10 +54,10 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
                     </div>
                     <div className="brand-text-block">
                         <div className="brand-title-wrap">
-                            <h2 className="brand-name">DocPilot</h2>
-                            <span className="brand-badge-lab">CDSS</span>
+                            <h2 className="brand-name">CDSS</h2>
+                            <span className="brand-badge-lab">v3.0</span>
                         </div>
-                        <span className="brand-subtext">@clinical_copilot</span>
+                        <span className="brand-subtext">Clinical Decision Support</span>
                     </div>
                 </div>
 

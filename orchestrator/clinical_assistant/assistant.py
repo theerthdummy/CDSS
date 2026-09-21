@@ -290,7 +290,7 @@ class ClinicalConversationalAssistant:
             llm_result = await self.gpt_client.generate_async(
                 messages=prompt_messages,
                 temperature=0.2,
-                max_tokens=600,
+                max_tokens=2048,
             )
             raw_gpt_content = llm_result.get("content", "")
             model_used = llm_result.get("model", model_used)

@@ -76,11 +76,7 @@ class ClinicalResponseValidator:
         # 3. Strip HTML table and formatting tags
         cleaned = re.sub(r"(?i)</?(?:table|thead|tbody|tfoot|tr|th|td|p|div|span|b|strong|i|em)[^>]*>", " ", cleaned)
 
-        # 4. Handle inline concatenated tables (e.g. text | Col1 | Col2 | |---|---| | Row1 | Val1 |)
-        # If multiple pipe-blocks are stuck together or on the same line as text
-        cleaned = re.sub(r"([^\n|])\s*\|\s*([A-Za-z*])", r"\1\n| \2", cleaned)
-        cleaned = re.sub(r"\|\s*\|", "|\n|", cleaned)
-
+        # 4. Handle table conversion to clean bullet points
         lines = cleaned.split("\n")
         new_lines = []
         for line in lines:
@@ -88,21 +84,25 @@ class ClinicalResponseValidator:
             # Ignore separator lines like |---|---| or |:---|:---|
             if re.match(r"^\|?[\s\-:|]+\|?$", stripped):
                 continue
-            # If line is a table header row e.g. | Category | Details | or | Key | Value |
-            if re.match(r"^\|\s*(?:Category|Details|Key|Value|Field|Information|Status|Description)\s*\|", stripped, re.IGNORECASE):
+            # If line is a table header row e.g. | Category | Considerations | or | Category | Details |
+            if re.match(r"^\|\s*(?:Category|Considerations|Details|Key|Value|Field|Information|Status|Description|Priority)\s*(?:\|.*)?\|?$", stripped, re.IGNORECASE):
                 continue
-            # If table row like | Category | Details |
-            if stripped.startswith("|") and stripped.endswith("|"):
+            # If table row like | Must-Not-Miss | Active caries... |
+            if stripped.startswith("|") or (stripped.count("|") >= 2 and not stripped.startswith("-")):
                 cells = [c.strip() for c in stripped.strip("|").split("|") if c.strip()]
-                if cells:
-                    # Strip any redundant asterisks inside cell headers
+                if len(cells) == 2:
                     header_c = re.sub(r"^\*+|\*+$", "", cells[0]).strip()
-                    if len(cells) == 2:
-                        val_c = cells[1]
-                        new_lines.append(f"- **{header_c}**: {val_c}")
-                    else:
-                        new_lines.append(f"- {header_c}: {', '.join(cells[1:])}")
-                continue
+                    val_c = cells[1]
+                    new_lines.append(f"- **{header_c}**: {val_c}")
+                    continue
+                elif len(cells) > 2:
+                    header_c = re.sub(r"^\*+|\*+$", "", cells[0]).strip()
+                    new_lines.append(f"- **{header_c}**: {', '.join(cells[1:])}")
+                    continue
+                elif len(cells) == 1 and (stripped.startswith("|") or stripped.endswith("|")):
+                    header_c = re.sub(r"^\*+|\*+$", "", cells[0]).strip()
+                    new_lines.append(f"### {header_c}")
+                    continue
             new_lines.append(line)
 
         cleaned = "\n".join(new_lines)

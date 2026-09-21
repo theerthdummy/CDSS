@@ -102,35 +102,49 @@ function MarkdownRenderer({ content }) {
             continue;
         }
 
-        // Table separator artifact e.g. |---|---|
+        // Table separator artifact e.g. |---|---| or header | Category | Considerations |
         if (/^\|?[\s\-:|]+\|?$/.test(trimmed)) {
             continue;
         }
+        if (/^\|\s*(?:Category|Considerations|Details|Key|Value|Field|Information|Status|Description|Priority)\s*(?:\|.*)?\|?$/i.test(trimmed)) {
+            continue;
+        }
 
-        // Table row e.g. | Key | Value | -> convert to neat bullet
-        if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+        // Table row e.g. | Key | Value | or | Key | Value -> convert to neat bullet
+        if (trimmed.startsWith("|") || (trimmed.includes("|") && !trimmed.startsWith("-") && !trimmed.startsWith("*"))) {
             flushList();
             const cells = trimmed
-                .slice(1, -1)
+                .replace(/^\||\|$/g, "")
                 .split("|")
                 .map((c) => c.trim())
                 .filter(Boolean);
             if (cells.length === 2) {
+                const header = cells[0].replace(/^\*+|\*+$/g, "");
                 elements.push(
                     <p key={`tbl-${i}`} className="md-bullet-line">
                         <span className="md-bullet-dot">•</span>
-                        <strong>{cells[0]}:</strong> {parseInlineMarkdown(cells[1])}
+                        <strong>{header}:</strong> {parseInlineMarkdown(cells[1])}
                     </p>
                 );
-            } else if (cells.length > 0) {
+                continue;
+            } else if (cells.length > 2) {
+                const header = cells[0].replace(/^\*+|\*+$/g, "");
                 elements.push(
                     <p key={`tbl-${i}`} className="md-bullet-line">
                         <span className="md-bullet-dot">•</span>
-                        {parseInlineMarkdown(cells.join(" — "))}
+                        <strong>{header}:</strong> {parseInlineMarkdown(cells.slice(1).join(" — "))}
                     </p>
                 );
+                continue;
+            } else if (cells.length === 1 && trimmed.startsWith("|")) {
+                const header = cells[0].replace(/^\*+|\*+$/g, "");
+                elements.push(
+                    <h4 key={`tbl-h-${i}`} className="md-heading">
+                        {header}
+                    </h4>
+                );
+                continue;
             }
-            continue;
         }
 
         // Urgent alert heading e.g. ### ⚠️ Important Medical Safety Advice or **URGENT ADVICE**
