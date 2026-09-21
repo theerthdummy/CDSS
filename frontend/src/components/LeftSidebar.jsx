@@ -4,10 +4,11 @@ import { useChatState } from "../context/ChatContext";
 function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
     const {
         recentSessions,
+        activeSessionId,
+        loadSession,
         deleteRecentSession,
         clearAllSessions,
         resetConsultation,
-        sendMessage,
         isLoading,
         systemHealth,
         isSidebarOpen,
@@ -19,8 +20,7 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredSessions = recentSessions.filter((session) =>
-        session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (session.preview && session.preview.toLowerCase().includes(searchTerm.toLowerCase()))
+        session.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleNewConsultation = () => {
@@ -31,8 +31,7 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
 
     const handleSelectSession = (session) => {
         if (isLoading) return;
-        resetConsultation();
-        sendMessage(session.title);
+        loadSession(session.id);
     };
 
     const handleDelete = (e, id) => {
@@ -142,7 +141,7 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
                         filteredSessions.map((session) => (
                             <div
                                 key={session.id}
-                                className="recent-session-item"
+                                className={`recent-session-item ${activeSessionId === session.id ? "session-active" : ""}`}
                                 onClick={() => handleSelectSession(session)}
                             >
                                 <span className="session-item-title" title={session.title}>
@@ -154,6 +153,7 @@ function LeftSidebar({ onOpenSystemStatus, onShowToast }) {
                                     onClick={(e) => handleDelete(e, session.id)}
                                     title="Delete chat"
                                     aria-label="Delete chat"
+                                    tabIndex={-1}
                                 >
                                     ✕
                                 </button>

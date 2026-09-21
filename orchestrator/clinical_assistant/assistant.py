@@ -97,6 +97,7 @@ class ClinicalConversationalAssistant:
         self,
         message: str,
         session_id: Optional[str] = None,
+        conversation_history: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Execute one complete multi-turn conversational cycle with parallel retrieval and async GPT."""
         t_req_start = time.perf_counter()
@@ -105,6 +106,16 @@ class ClinicalConversationalAssistant:
         memory: PatientEntityMemory = session_data["long_term"]
         buffer: ShortTermMessageBuffer = session_data["short_term"]
         asked_questions = self._asked_questions_by_session.setdefault(session_id, set())
+
+        # If buffer is empty but history provided by client, hydrate buffer & memory
+        if not buffer.get_messages() and conversation_history:
+            for item in conversation_history[-10:]:
+                r = item.get("role") or item.get("sender") or "user"
+                c = item.get("content") or item.get("text") or ""
+                if c.strip():
+                    buffer.add_message("user" if r == "user" else "assistant", c)
+                    if r == "user":
+                        ClinicalStateExtractor.extract_from_turn(c, memory)
 
         logger.info("[TIMESTAMP] Request received | session: %s | input: %s", session_id, message[:80])
 

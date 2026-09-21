@@ -329,6 +329,14 @@
     color: var(--color-text-primary);
 }
 
+.recent-session-item.session-active {
+    background: var(--color-surface-hover);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+    border-left: 3px solid var(--color-primary);
+    padding-left: 8px;
+}
+
 .session-item-title {
     flex: 1;
     white-space: nowrap;

@@ -68,6 +68,7 @@ assistant = ClinicalConversationalAssistant(
 class ChatRequest(BaseModel):
     message: str = Field(..., description="Patient / Clinician input message", min_length=1)
     session_id: Optional[str] = Field(None, description="Optional session ID for multi-turn state maintenance")
+    conversation_history: Optional[List[Dict[str, Any]]] = Field(None, description="Optional conversation history for state hydration")
 
 
 class ChatResponse(BaseModel):
@@ -122,6 +123,7 @@ async def chat_endpoint(request: ChatRequest):
         result = await assistant.chat(
             message=request.message,
             session_id=request.session_id,
+            conversation_history=request.conversation_history,
         )
         return ChatResponse(**result)
     except Exception as exc:

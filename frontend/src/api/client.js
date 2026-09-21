@@ -89,13 +89,15 @@ export function normalizeApiError(error) {
  * 
  * @param {string} message - Patient/Clinician input message
  * @param {string|null} sessionId - Optional session UUID for multi-turn state continuity
+ * @param {Array<Object>|null} conversationHistory - Optional previous turn messages for state hydration
  * @returns {Promise<ChatResponse>}
  */
-export async function chatWithAssistant(message, sessionId = null) {
+export async function chatWithAssistant(message, sessionId = null, conversationHistory = null) {
     try {
         const payload = {
             message: message.trim(),
             session_id: sessionId || null,
+            conversation_history: conversationHistory || null,
         };
         const response = await apiClient.post("/chat", payload);
         return response.data;
